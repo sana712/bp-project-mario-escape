@@ -791,6 +791,8 @@ int marioX = 10, marioY = 10;  // موقعیت ماریو
 bool isMarioJumping = false;  // وضعیت پرش
 int jumpHeight = 4, jumpStep = 0;
 HANDLE lock;
+
+int coins = 0;
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // تابع حرکت تمام هشت‌پاها
 
@@ -1078,7 +1080,10 @@ void converttochar1(int i, int j) {
 							marioX = 4;
 							marioY = 24;
 						}
-
+						if (map1[marioX - 1][marioY] == 5) {  // اگر خانه بالای ماریو سکه داشته باشد
+							coins++;
+							map1[marioX - 1][marioY] = 0;     // حذف سکه
+						}
 
 
 						if (GetAsyncKeyState('A') & 0x8000 && marioY > 0 && map1[marioX][marioY - 1] == 0) {
@@ -1087,6 +1092,10 @@ void converttochar1(int i, int j) {
 								marioX = 4;
 								marioY = 24;
 							}
+							if (map1[marioX][marioY + 1] == 5) {  // اگر خانه سمت راست سکه داشته باشد
+								coins++;                      // افزایش امتیاز
+								map1[marioX][marioY + 1] = 0;     // حذف سکه از نقشه
+							}
 
 						}
 						if (GetAsyncKeyState('D') & 0x8000 && marioY < 64 && map1[marioX][marioY + 1] == 0) {
@@ -1094,6 +1103,10 @@ void converttochar1(int i, int j) {
 							if (marioX == 9 && marioY == 61) {
 								marioX = 4;
 								marioY = 24;
+							}
+							if (map1[marioX][marioY + 1] == 5) {  // اگر خانه سمت راست سکه داشته باشد
+								coins++;                      // افزایش امتیاز
+								map1[marioX][marioY + 1] = 0;     // حذف سکه از نقشه
 							}
 
 						}
@@ -1104,7 +1117,7 @@ void converttochar1(int i, int j) {
 							marioX = 4;
 							marioY = 24;
 						}
-
+						
 					}
 					else {
 						jumpStep = jumpHeight;  // برخورد با مانع
@@ -1119,7 +1132,10 @@ void converttochar1(int i, int j) {
 							marioX = 4;
 							marioY = 24;
 						}
-
+						if (map1[marioX + 1][marioY] == 5) {  // اگر خانه بالای ماریو سکه داشته باشد
+							coins++;
+							map1[marioX + 1][marioY] = 0;     // حذف سکه
+						}
 
 
 						if (GetAsyncKeyState('A') & 0x8000 && marioY > 0 && map1[marioX][marioY - 1] == 0) {
@@ -1128,6 +1144,10 @@ void converttochar1(int i, int j) {
 								marioX = 4;
 								marioY = 24;
 							}
+							if (map1[marioX][marioY - 1] == 5) { 
+								coins++;                     
+								map1[marioX][marioY - 1] = 0;     
+							}
 
 						}
 						if (GetAsyncKeyState('D') & 0x8000 && marioY < 64 && map1[marioX][marioY + 1] == 0) {
@@ -1135,6 +1155,10 @@ void converttochar1(int i, int j) {
 							if (marioX == 9 && marioY == 61) {
 								marioX = 4;
 								marioY = 24;
+							}
+							if (map1[marioX][marioY + 1] == 5) {  // اگر خانه سمت راست سکه داشته باشد
+								coins++;                      // افزایش امتیاز
+								map1[marioX][marioY + 1] = 0;     // حذف سکه از نقشه
 							}
 
 						}
@@ -1156,6 +1180,10 @@ void converttochar1(int i, int j) {
 					if (marioX == 9 && marioY == 61) {
 						marioX = 4;
 						marioY = 24;
+					}
+					if (map1[marioX + 1][marioY] == 5) { 
+						coins++;
+						map1[marioX + 1][marioY] = 0;     // حذف سکه
 					}
 
 
@@ -1181,7 +1209,10 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
 					marioX = 4;
 					marioY = 24;
 				}
-
+				if (map1[marioX][marioY - 1] == 5) {  
+					coins++;                      
+					map1[marioX][marioY - 1] = 0;     
+				}
                 map1[marioX][marioY] = 1;
                 Sleep(100);  // تأخیر برای حرکت تدریجی
             }
@@ -1194,7 +1225,10 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
 					marioX = 4;
 					marioY = 24;
 				}
-
+				if (map1[marioX][marioY + 1] == 5) {  // اگر خانه سمت راست سکه داشته باشد
+					coins++;                      // افزایش امتیاز
+					map1[marioX][marioY + 1] = 0;     // حذف سکه از نقشه
+				}
                 map1[marioX][marioY] = 1;
                 Sleep(100);  // تأخیر برای حرکت تدریجی
             }
