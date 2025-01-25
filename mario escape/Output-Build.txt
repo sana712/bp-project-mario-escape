@@ -1,0 +1,13 @@
+﻿Build started at 07:22 ب.ظ...
+1>------ Build started: Project: mario escape, Configuration: Debug x64 ------
+1>Marioescape.c
+1>D:\BP project\mario escape\mario escape\Marioescape.c(9,12): warning C4566: character represented by universal-character-name '\U0001F60A' cannot be represented in the current code page (1256)
+1>D:\BP project\mario escape\mario escape\Marioescape.c(9,12): warning C4566: character represented by universal-character-name '\U0001F30D' cannot be represented in the current code page (1256)
+1>D:\BP project\mario escape\mario escape\Marioescape.c(10,12): warning C4566: character represented by universal-character-name '\U0001F3AE' cannot be represented in the current code page (1256)
+1>D:\BP project\mario escape\mario escape\Marioescape.c(10,12): warning C4566: character represented by universal-character-name '\U0001F4BB' cannot be represented in the current code page (1256)
+1>D:\BP project\mario escape\mario escape\Marioescape.c(10,12): warning C4566: character represented by universal-character-name '\U0001F525' cannot be represented in the current code page (1256)
+1>D:\BP project\mario escape\mario escape\Marioescape.c(10,12): warning C4566: character represented by universal-character-name '\U0001F389' cannot be represented in the current code page (1256)
+1>mario escape.vcxproj -> D:\BP project\mario escape\x64\Debug\mario escape.exe
+1>Done building project "mario escape.vcxproj".
+========== Build: 1 succeeded, 0 failed, 0 up-to-date, 0 skipped ==========
+========== Build completed at 07:22 ب.ظ and took 00/517 seconds ==========
