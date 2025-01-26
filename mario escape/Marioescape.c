@@ -800,6 +800,11 @@ int mushroomstate = 0;
 int mushroomuse = 0;
 HANDLE mushroomThread; // Thread مربوط به حرکت قارچ
 
+int score = 0;              // امتیاز کلی ماریو
+int scoreMultiplier = 1;    // ضریب امتیاز اولیه
+clock_t lastKillTime = 0;   // زمان آخرین نابودی
+
+
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // تابع حرکت تمام هشت‌پاها
 
@@ -1024,9 +1029,46 @@ void converttochar1(int i, int j) {
 			printf("\n");
 		}
 		printf(Pink);
-		printf("coins : %d", coins);
+		printf("coins : %d\n", coins);
+		printf("Score: %d (Multiplier: x%d)", score, scoreMultiplier);
 		printf(Reset);
 	}
+
+	void calculateScore() {
+		static int lastKillTime = 0;   // زمان آخرین نابودی دشمن
+		static int multiplier = 1;    // ضریب امتیاز
+		int currentTime = GetTickCount();  // زمان فعلی
+
+		if (currentTime - lastKillTime <= 5000) {  // اگر فاصله کمتر از 5 ثانیه باشد
+			multiplier = (multiplier < 8) ? multiplier * 2 : 8;  // ضریب را دوبرابر کن، اما حداکثر 8
+		}
+		else {
+			multiplier = 1;  // ریست ضریب اگر فاصله زیاد باشد
+		}
+
+		score += 100 * multiplier;  // محاسبه امتیاز
+		lastKillTime = currentTime;  // به‌روزرسانی زمان آخرین نابودی
+
+		// چاپ اطلاعات برای تست
+		
+	}
+
+
+	void killEnemy(int x, int y) {
+		for (int i = 0; i < 3; i++) {
+			if (octopusX[i] == x && octopusY[i] == y) {
+				octopusX[i] = -1;  // حذف دشمن از مختصات
+				octopusY[i] = -1;
+				octopusDir[i] = 0; // جلوگیری از حرکت بیشتر
+				break;
+			}
+		}
+		map1[x][y] = 0;  // حذف دشمن از نقشه
+		calculateScore();  // به‌روزرسانی امتیاز
+	}
+
+
+
 	void checkMushroomCollision() {
 		// چک می‌کنیم آیا ماریو به زیر بلوک قارچ رسیده است
 		if (map1[marioX - 1][marioY] == 13) {  // بلوک قارچ با کاراکتر 'H' نمایش داده شده است
@@ -1218,6 +1260,22 @@ void converttochar1(int i, int j) {
 					if (map1[marioX + 1][marioY] == 0) {
 						map1[marioX][marioY] = 0;
 						marioX++;
+
+						WaitForSingleObject(lock, INFINITE);
+					
+						// بررسی برخورد
+						for (int i = 0; i < 3; i++) {
+							if (abs(octopusX[i] - marioX) <= 1 && abs(octopusY[i] - marioY) <= 1) {
+								killEnemy(octopusX[i], octopusY[i]);
+								isMarioJumping = false;
+								jumpStep = jumpHeight;
+								break;
+							}
+						}
+						ReleaseMutex(lock);
+
+
+
 
 						if (marioX == 9 && marioY == 61) {
 							marioX = 4;
