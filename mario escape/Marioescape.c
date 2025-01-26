@@ -787,12 +787,16 @@ int octopusY[3] = { 55, 57, 20 };
 int octopusDir[3] = { 1, -1, 1 };  // جهت حرکت (1 برای راست، -1 برای چپ)
 
 extern int map1[15][65];
-int marioX = 10, marioY = 10;  // موقعیت ماریو
+int marioX = 12, marioY = 3;  // موقعیت ماریو
 bool isMarioJumping = false;  // وضعیت پرش
 int jumpHeight = 4, jumpStep = 0;
 HANDLE lock;
 
 int coins = 0;
+int blockcoin = 0;
+
+int mushroomx = -1, mushroomy = -1;
+int mushroomstate = 0;
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // تابع حرکت تمام هشت‌پاها
 
@@ -839,6 +843,9 @@ void converttochar1(int i, int j) {
 	}
 	else if (map1[i][j] == 12) {
 		printf("🐙");
+	}
+	else if (map1[i][j] == 13) {
+		printf("🍄");
 	}
 }
 
@@ -930,7 +937,7 @@ void converttochar1(int i, int j) {
 				}
 				if (i == 9)
 				{
-					if (j == 7 || j == 8 || j == 10 || j == 51 || j == 54) {
+					if (j == 7 || j == 8  || j == 51 || j == 54) {
 						map1[i][j] = 2;
 					}
 					else if (j == 52 || j == 53) {
@@ -943,7 +950,9 @@ void converttochar1(int i, int j) {
 					else if (j == 9) {
 						map1[i][j] = 4;
 					}
-
+					else if (j == 10) {
+						map1[i][j] = 13;
+					}
 				}
 				if (i == 10) {
 					if (j == 12 || j == 13 || j == 14 || j == 51 || j == 54) {
@@ -1008,7 +1017,30 @@ void converttochar1(int i, int j) {
 			}
 			printf("\n");
 		}
+		printf(Pink);
+		printf("coins : %d", coins);
+		printf(Reset);
 	}
+	void checkMushroomCollision() {
+		// چک می‌کنیم آیا ماریو به زیر بلوک قارچ رسیده است
+		if (map1[marioX - 1][marioY] == 13) {  // بلوک قارچ با کاراکتر 'H' نمایش داده شده است
+			mushroomx = marioX - 1;  // قرار دادن قارچ در بالای بلوک
+			mushroomy = marioY;
+			mushroomstate = 1;  // قارچ شروع به حرکت می‌کند
+		}
+	}
+
+	void checkCollision() {
+		// چک می‌کنیم آیا ماریو زیر یک بلوک قرار دارد
+		if (map1[marioX - 1][marioY] == 4) {
+			// ظاهر کردن سکه در مختصات بلوک
+			map1[marioX - 2][marioY] =5;// بلوک به سکه تبدیل می‌شود
+			coins++;
+			blockcoin++;
+		}
+	}
+
+
 
 	// تابعی برای تغییر وضعیت گل‌ها
 	void toggleFlowers() {
@@ -1056,7 +1088,7 @@ void converttochar1(int i, int j) {
 				map1[octopusX[i]][octopusY[i]] = 12;  // جایگذاری اختاپوس
 			}
 			ReleaseMutex(lock);
-			Sleep(300);  // هر 300 میلی‌ثانیه حرکت اختاپوس‌ها
+			Sleep(600);  // هر 300 میلی‌ثانیه حرکت اختاپوس‌ها
 		}
 		return 0;
 	}
@@ -1076,6 +1108,9 @@ void converttochar1(int i, int j) {
 					if (map1[marioX - 1][marioY] == 0) {
 						map1[marioX][marioY] = 0;
 						marioX--;
+						if (blockcoin < 3) {
+							checkCollision();
+						}
 						if (marioX == 9 && marioY == 61) {
 							marioX = 4;
 							marioY = 24;
