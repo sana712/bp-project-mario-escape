@@ -787,7 +787,7 @@ int octopusY[3] = { 55, 57, 20 };
 int octopusDir[3] = { 1, -1, 1 };  // جهت حرکت (1 برای راست، -1 برای چپ)
 
 extern int map1[15][65];
-int marioX = 12, marioY = 3;  // موقعیت ماریو
+int marioX = 10, marioY = 10;  // موقعیت ماریو
 bool isMarioJumping = false;  // وضعیت پرش
 int jumpHeight = 4, jumpStep = 0;
 HANDLE lock;
@@ -797,6 +797,9 @@ int blockcoin = 0;
 
 int mushroomx = -1, mushroomy = -1;
 int mushroomstate = 0;
+int mushroomuse = 0;
+HANDLE mushroomThread; // Thread مربوط به حرکت قارچ
+
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // تابع حرکت تمام هشت‌پاها
 
@@ -845,6 +848,9 @@ void converttochar1(int i, int j) {
 		printf("🐙");
 	}
 	else if (map1[i][j] == 13) {
+		printf("🟨");
+	}
+	else if (map1[i][j] == 14) {
 		printf("🍄");
 	}
 }
@@ -1024,11 +1030,47 @@ void converttochar1(int i, int j) {
 	void checkMushroomCollision() {
 		// چک می‌کنیم آیا ماریو به زیر بلوک قارچ رسیده است
 		if (map1[marioX - 1][marioY] == 13) {  // بلوک قارچ با کاراکتر 'H' نمایش داده شده است
-			mushroomx = marioX - 1;  // قرار دادن قارچ در بالای بلوک
+			WaitForSingleObject(lock, INFINITE);
+			mushroomx = marioX - 2;  // قرار دادن قارچ در بالای بلوک
 			mushroomy = marioY;
 			mushroomstate = 1;  // قارچ شروع به حرکت می‌کند
+			mushroomuse = 1;
+			ReleaseMutex(lock);
+
 		}
 	}
+	DWORD WINAPI moveMushroomThread(LPVOID lpParam) {
+		while (1) {
+			WaitForSingleObject(lock, INFINITE);
+
+			if (mushroomstate == 1) {
+				// حرکت قارچ به پایین
+				if (map1[mushroomx + 1][mushroomy] == 0) {
+					map1[mushroomx][mushroomy] = 0;  // پاک کردن موقعیت قبلی
+					mushroomx++;
+					map1[mushroomx][mushroomy] = 14;  // جایگذاری در موقعیت جدید
+				}
+				// حرکت قارچ به راست
+				else if (mushroomy + 1 < 40 && map1[mushroomx][mushroomy + 1] == 0) {
+					map1[mushroomx][mushroomy] = 0;  // پاک کردن موقعیت قبلی
+					mushroomy++;
+					map1[mushroomx][mushroomy] = 14;  // جایگذاری در موقعیت جدید
+				}
+				// حرکت قارچ به چپ (در صورت نیاز)
+				else if (mushroomy - 1 >= 0 && map1[mushroomx][mushroomy - 1] == 0) {
+					map1[mushroomx][mushroomy] = 0;  // پاک کردن موقعیت قبلی
+					mushroomy--;
+					map1[mushroomx][mushroomy] = 14;  // جایگذاری در موقعیت جدید
+				}
+			}
+
+			ReleaseMutex(lock);
+			Sleep(200);  // تنظیم سرعت حرکت قارچ
+		}
+		return 0;
+	}
+
+
 
 	void checkCollision() {
 		// چک می‌کنیم آیا ماریو زیر یک بلوک قرار دارد
@@ -1111,6 +1153,20 @@ void converttochar1(int i, int j) {
 						if (blockcoin < 3) {
 							checkCollision();
 						}
+						if (mushroomuse != 1) {
+							checkMushroomCollision();
+
+						}
+						if (mushroomstate == 1) { // اگر قارچ فعال شده
+							// اگر Thread از قبل ایجاد نشده، اون رو بساز
+							if (mushroomThread == NULL || WaitForSingleObject(mushroomThread, 0) != WAIT_TIMEOUT) {
+								mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
+								if (mushroomThread == NULL) {
+									printf("Error creating mushroom thread: %d\n", GetLastError());
+								}
+							}
+						}
+
 						if (marioX == 9 && marioY == 61) {
 							marioX = 4;
 							marioY = 24;
@@ -1347,6 +1403,8 @@ int main()
 
 	// تردی برای حرکت هشت‌پاها
 	HANDLE octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
+	
+	HANDLE mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
 
 	while (1) {
 		WaitForSingleObject(lock, INFINITE);
@@ -1357,6 +1415,12 @@ int main()
 	}
 
 	// بستن تردها و منابع (هرچند در عمل اینجا نمی‌رسیم)
+	if (mushroomThread != NULL) {
+		WaitForSingleObject(mushroomThread, INFINITE); // صبر می‌کنیم تا Thread تموم بشه
+		CloseHandle(mushroomThread); // آزاد کردن منابع
+		mushroomThread = NULL; // مقدار‌دهی دوباره
+	}
+
 	CloseHandle(moveThread);
 	CloseHandle(jumpThread);
 	CloseHandle(flowerThread);
