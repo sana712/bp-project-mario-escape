@@ -804,9 +804,10 @@ int score = 0;              // امتیاز کلی ماریو
 int scoreMultiplier = 1;    // ضریب امتیاز اولیه
 clock_t lastKillTime = 0;   // زمان آخرین نابودی
 
+int  mariopower= 0;  // 0 یعنی ماریو عادی است، 1 یعنی ماریو بزرگ شده است
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// تابع حرکت تمام هشت‌پاها
+
 
 // تبدیل مقدار نقشه به کاراکتر
 void converttochar1(int i, int j) {
@@ -1034,23 +1035,24 @@ void converttochar1(int i, int j) {
 		printf(Reset);
 	}
 
+	
+
+
 	void calculateScore() {
 		static int lastKillTime = 0;   // زمان آخرین نابودی دشمن
 		static int multiplier = 1;    // ضریب امتیاز
 		int currentTime = GetTickCount();  // زمان فعلی
 
 		if (currentTime - lastKillTime <= 5000) {  // اگر فاصله کمتر از 5 ثانیه باشد
-			multiplier = (multiplier < 8) ? multiplier * 2 : 8;  // ضریب را دوبرابر کن، اما حداکثر 8
+			multiplier = (multiplier < 8) ? multiplier * 2 : 8;  
 		}
 		else {
-			multiplier = 1;  // ریست ضریب اگر فاصله زیاد باشد
+			multiplier = 1;  
 		}
 
-		score += 100 * multiplier;  // محاسبه امتیاز
-		lastKillTime = currentTime;  // به‌روزرسانی زمان آخرین نابودی
+		score += 100 * multiplier;  
+		lastKillTime = currentTime;  
 
-		// چاپ اطلاعات برای تست
-		
 	}
 
 
@@ -1172,7 +1174,7 @@ void converttochar1(int i, int j) {
 				map1[octopusX[i]][octopusY[i]] = 12;  // جایگذاری اختاپوس
 			}
 			ReleaseMutex(lock);
-			Sleep(600);  // هر 300 میلی‌ثانیه حرکت اختاپوس‌ها
+			Sleep(600); 
 		}
 		return 0;
 	}
@@ -1192,6 +1194,7 @@ void converttochar1(int i, int j) {
 					if (map1[marioX - 1][marioY] == 0) {
 						map1[marioX][marioY] = 0;
 						marioX--;
+						
 						if (blockcoin < 3) {
 							checkCollision();
 						}
@@ -1354,6 +1357,7 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
             if (marioY > 0 && map1[marioX][marioY - 1] == 0) {
                 map1[marioX][marioY] = 0;
                 marioY--;
+
 				if (marioX == 9 && marioY == 61) {
 					marioX = 4;
 					marioY = 24;
@@ -1382,6 +1386,16 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
                 Sleep(100);  // تأخیر برای حرکت تدریجی
             }
         }
+
+		// بررسی نزدیکی ماریو به قارچ (افقی یا عمودی)
+		if ((marioX == mushroomx && (marioY == mushroomy + 1 || marioY == mushroomy - 1)) ||
+			(marioY == mushroomy && (marioX == mushroomx + 1 || marioX == mushroomx - 1))) {
+			// ماریو در کنار قارچ قرار دارد، پس می‌توانیم واکنش نشان دهیم
+			mushroomuse = 1;
+			mushroomstate = 0;
+			map1[mushroomx][mushroomy] = 0;// قارچ را از نقشه حذف کن
+		}
+
         ReleaseMutex(lock);
         Sleep(50);  // جلوگیری از بار اضافی CPU
     }
