@@ -804,7 +804,10 @@ int score = 0;              // امتیاز کلی ماریو
 int scoreMultiplier = 1;    // ضریب امتیاز اولیه
 clock_t lastKillTime = 0;   // زمان آخرین نابودی
 
-int  mariopower= 0;  // 0 یعنی ماریو عادی است، 1 یعنی ماریو بزرگ شده است
+int marioX2 = -1;  // موقعیت افقی ماریوی دوم (X)
+int marioY2 = -1;  // موقعیت عمودی ماریوی دوم (Y)
+int extraMarioActive = 0;  // 0 = غیرفعال، 1 = فعال
+int mariopower = 0;  // 0 = ماریوی عادی، 1 = ماریوی قوی (بعد از خوردن قارچ)
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -887,15 +890,11 @@ void converttochar1(int i, int j) {
 					}
 				}
 				if (i == 2) {
-					if (j == 24) {
-						map1[i][j] = 8;
-					}
-				}
-				if (i == 3) {
 					if (j == 23 || j == 24 || j == 25) {
 						map1[i][j] = 11;
 					}
 				}
+				
 				if (i == 4) {
 					
 					 if (j == 18)
@@ -1191,10 +1190,25 @@ void converttochar1(int i, int j) {
 			if (isMarioJumping) {
 				WaitForSingleObject(lock, INFINITE);
 				if (jumpStep < jumpHeight) {  // حرکت به بالا
-					if (map1[marioX - 1][marioY] == 0) {
+					if (map1[marioX -1][marioY] == 0 || map1[marioX - 1][marioY] == 1) {
 						map1[marioX][marioY] = 0;
 						marioX--;
-						
+						if (extraMarioActive) { // چک کردن ماریوی دوم
+							if (jumpStep < jumpHeight) { // حرکت عمودی به بالا
+								if (map1[marioX2 - 1][marioY2] == 0 ) {
+									// اگر خانه‌ی مقصد خالی یا سکه است، ماریو حرکت کند
+									map1[marioX2][marioY2] = 0;  // خانه فعلی پاک می‌شود
+									marioX2--;  // حرکت به بالا
+								}
+								else if (map1[marioX2 - 1][marioY2] != 0) {
+									jumpStep = jumpHeight;
+									map1[marioX2][marioY2] = 1;
+									
+								}
+							}
+						}
+
+
 						if (blockcoin < 3) {
 							checkCollision();
 						}
@@ -1215,7 +1229,12 @@ void converttochar1(int i, int j) {
 						if (marioX == 9 && marioY == 61) {
 							marioX = 4;
 							marioY = 24;
+							if (extraMarioActive) {
+								marioX2 = 3;
+								marioY2 = 24;
+							}
 						}
+
 						if (map1[marioX - 1][marioY] == 5) {  // اگر خانه بالای ماریو سکه داشته باشد
 							coins++;
 							map1[marioX - 1][marioY] = 0;     // حذف سکه
@@ -1224,9 +1243,17 @@ void converttochar1(int i, int j) {
 
 						if (GetAsyncKeyState('A') & 0x8000 && marioY > 0 && map1[marioX][marioY - 1] == 0) {
 							marioY--;  // چپ
+							if (extraMarioActive && map1[marioX2 ][marioY2 - 1] == 0) {
+								marioY2--;  
+							}
+
 							if (marioX == 9 && marioY == 61) {
 								marioX = 4;
 								marioY = 24;
+								if (extraMarioActive) {
+									marioX2 = 3;
+									marioY2 = 24;
+								}
 							}
 							if (map1[marioX][marioY + 1] == 5) {  // اگر خانه سمت راست سکه داشته باشد
 								coins++;                      // افزایش امتیاز
@@ -1236,10 +1263,19 @@ void converttochar1(int i, int j) {
 						}
 						if (GetAsyncKeyState('D') & 0x8000 && marioY < 64 && map1[marioX][marioY + 1] == 0) {
 							marioY++;  // راست
+
+							if (extraMarioActive && map1[marioX2][marioY2+1] == 0) {
+								marioY2++;  // ماریوی دوم هم به همین اندازه به بالا حرکت کنه
+							} 
+
 							if (marioX == 9 && marioY == 61) {
 								marioX = 4;
 								marioY = 24;
-							}
+								if (extraMarioActive) {
+									marioX2 = 3;
+									marioY2 = 24;
+								}
+							} 
 							if (map1[marioX][marioY + 1] == 5) {  // اگر خانه سمت راست سکه داشته باشد
 								coins++;                      // افزایش امتیاز
 								map1[marioX][marioY + 1] = 0;     // حذف سکه از نقشه
@@ -1248,10 +1284,18 @@ void converttochar1(int i, int j) {
 						}
 
 						map1[marioX][marioY] = 1;
+						if (extraMarioActive) {
+							map1[marioX2][marioY2] = 1;  // ماریوی دوم
+						}
+
 						jumpStep++;
 						if (marioX == 9 && marioY == 61) {
 							marioX = 4;
 							marioY = 24;
+							if (extraMarioActive) {
+								marioX2 = 3;
+								marioY2 = 24;
+							}
 						}
 						
 					}
@@ -1263,6 +1307,10 @@ void converttochar1(int i, int j) {
 					if (map1[marioX + 1][marioY] == 0) {
 						map1[marioX][marioY] = 0;
 						marioX++;
+						if (extraMarioActive && map1[marioX2 + 1][marioY2] == 0) {
+							map1[marioX2][marioY2] = 0;
+							marioX2++; 
+						}
 
 						WaitForSingleObject(lock, INFINITE);
 					
@@ -1279,10 +1327,13 @@ void converttochar1(int i, int j) {
 
 
 
-
 						if (marioX == 9 && marioY == 61) {
 							marioX = 4;
 							marioY = 24;
+							if (extraMarioActive) {
+								marioX2 = 3;
+								marioY2 = 24;
+							}
 						}
 						if (map1[marioX + 1][marioY] == 5) {  // اگر خانه بالای ماریو سکه داشته باشد
 							coins++;
@@ -1292,9 +1343,18 @@ void converttochar1(int i, int j) {
 
 						if (GetAsyncKeyState('A') & 0x8000 && marioY > 0 && map1[marioX][marioY - 1] == 0) {
 							marioY--;  // چپ
+							if (extraMarioActive && map1[marioX2][marioY2-1] == 0) {
+								map1[marioX2][marioY2] = 0;
+								marioY2--;  
+							}
+
 							if (marioX == 9 && marioY == 61) {
 								marioX = 4;
 								marioY = 24;
+								if (extraMarioActive) {
+									marioX2 = 3;
+									marioY2 = 24;
+								}
 							}
 							if (map1[marioX][marioY - 1] == 5) { 
 								coins++;                     
@@ -1304,9 +1364,17 @@ void converttochar1(int i, int j) {
 						}
 						if (GetAsyncKeyState('D') & 0x8000 && marioY < 64 && map1[marioX][marioY + 1] == 0) {
 							marioY++;  // راست
+							if (extraMarioActive && map1[marioX2][marioY2+1] == 0) {
+								map1[marioX2][marioY2] = 0;
+								marioY2++;
+							}
 							if (marioX == 9 && marioY == 61) {
 								marioX = 4;
 								marioY = 24;
+								if (extraMarioActive) {
+									marioX2 = 3;
+									marioY2 = 24;
+								}
 							}
 							if (map1[marioX][marioY + 1] == 5) {  // اگر خانه سمت راست سکه داشته باشد
 								coins++;                      // افزایش امتیاز
@@ -1316,6 +1384,9 @@ void converttochar1(int i, int j) {
 						}
 
 						map1[marioX][marioY] = 1;
+						if (extraMarioActive) {
+							map1[marioX2][marioY2] = 1;  // ماریوی دوم
+						}
 					}
 					else {
 						isMarioJumping = false;  // پایان پرش
@@ -1328,10 +1399,19 @@ void converttochar1(int i, int j) {
 				WaitForSingleObject(lock, INFINITE);
 				if (marioX < 64) {  // جلوگیری از رفتن به خارج از نقشه
 					map1[marioX][marioY] = 0;  // خالی کردن موقعیت قبلی
-					marioX++; // حرکت ماریو به پایین
+					marioX++;// حرکت ماریو به پایین
+					if (extraMarioActive && map1[marioX2 + 1][marioY2] == 0) {
+						map1[marioX2][marioY2] = 0;
+						marioX2++;
+					}
+
 					if (marioX == 9 && marioY == 61) {
 						marioX = 4;
 						marioY = 24;
+						if (extraMarioActive) {
+							marioX2 = 3;
+							marioY2 = 24;
+						}
 					}
 					if (map1[marioX + 1][marioY] == 5) { 
 						coins++;
@@ -1340,6 +1420,9 @@ void converttochar1(int i, int j) {
 
 
 					map1[marioX][marioY] = 1;  // قرار دادن ماریو در موقعیت جدید
+					if (extraMarioActive) {
+						map1[marioX2][marioY2] = 1;  // ماریوی دوم
+					}
 					Sleep(100);  // تأخیر برای حرکت نرم‌تر
 				}
 				ReleaseMutex(lock);
@@ -1357,16 +1440,27 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
             if (marioY > 0 && map1[marioX][marioY - 1] == 0) {
                 map1[marioX][marioY] = 0;
                 marioY--;
-
+				if (extraMarioActive) {
+					map1[marioX2][marioY2] = 0;
+					marioY2--; 
+				}
+			
 				if (marioX == 9 && marioY == 61) {
 					marioX = 4;
 					marioY = 24;
+					if (extraMarioActive) {
+						marioX2 = 3;
+						marioY2 = 24;
+					}
 				}
 				if (map1[marioX][marioY - 1] == 5) {  
 					coins++;                      
 					map1[marioX][marioY - 1] = 0;     
 				}
                 map1[marioX][marioY] = 1;
+				if (extraMarioActive) {
+					map1[marioX2][marioY2] = 1;  // ماریوی دوم
+				}
                 Sleep(100);  // تأخیر برای حرکت تدریجی
             }
         }
@@ -1374,15 +1468,26 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
             if (marioY < 64 && map1[marioX][marioY + 1] == 0) {
                 map1[marioX][marioY] = 0;
                 marioY++;
+				if (extraMarioActive&& map1[marioX2][marioY2 + 1] == 0) {
+					map1[marioX2][marioY2] = 0;
+					marioY2++;  
+				}
 				if (marioX == 9 && marioY == 61) {
 					marioX = 4;
 					marioY = 24;
+					if (extraMarioActive) {
+						marioX2 = 3;
+						marioY2 = 24;
+					}
 				}
 				if (map1[marioX][marioY + 1] == 5) {  // اگر خانه سمت راست سکه داشته باشد
 					coins++;                      // افزایش امتیاز
 					map1[marioX][marioY + 1] = 0;     // حذف سکه از نقشه
 				}
                 map1[marioX][marioY] = 1;
+				if (extraMarioActive) {
+					map1[marioX2][marioY2] = 1;  // ماریوی دوم
+				}
                 Sleep(100);  // تأخیر برای حرکت تدریجی
             }
         }
@@ -1393,7 +1498,13 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
 			// ماریو در کنار قارچ قرار دارد، پس می‌توانیم واکنش نشان دهیم
 			mushroomuse = 1;
 			mushroomstate = 0;
-			map1[mushroomx][mushroomy] = 0;// قارچ را از نقشه حذف کن
+			map1[mushroomx][mushroomy] = 0;
+			
+			
+			extraMarioActive = 1;
+			marioX2 = marioX - 1;          // ماریوی دوم بالای ماریوی اصلی قرار می‌گیرد
+			marioY2 = marioY;
+			map1[marioX2][marioY2] = 1;
 		}
 
         ReleaseMutex(lock);
