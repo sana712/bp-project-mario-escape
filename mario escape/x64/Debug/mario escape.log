@@ -1,30 +1,4 @@
 ﻿  Marioescape.c
 D:\BP project\mario escape\mario escape\Marioescape.c(75,9): warning C4129: ' ': unrecognized character escape sequence
 D:\BP project\mario escape\mario escape\Marioescape.c(75,9): warning C4476: 'printf' : unknown type field character 'W' in format specifier
-D:\BP project\mario escape\mario escape\Marioescape.c(1662,9): warning C4013: 'checkMushroomCollision' undefined; assuming extern returning int
-D:\BP project\mario escape\mario escape\Marioescape.c(1668,49): error C2065: 'moveMushroomThread': undeclared identifier
-D:\BP project\mario escape\mario escape\Marioescape.c(1668,49): warning C4047: 'function': 'LPTHREAD_START_ROUTINE' differs in levels of indirection from 'int'
-D:\BP project\mario escape\mario escape\Marioescape.c(1668,49): warning C4024: 'CreateThread': different types for formal and actual parameter 3
-D:\BP project\mario escape\mario escape\Marioescape.c(1779,9): warning C4013: 'killEnemy' undefined; assuming extern returning int
-D:\BP project\mario escape\mario escape\Marioescape.c(2006,6): error C2084: function 'void calculateScore()' already has a body
-      D:\BP project\mario escape\mario escape\Marioescape.c(1487,7):
-      see previous definition of 'calculateScore'
-  
-D:\BP project\mario escape\mario escape\Marioescape.c(2024,6): error C2371: 'killEnemy': redefinition; different basic types
-D:\BP project\mario escape\mario escape\Marioescape.c(2039,6): error C2371: 'checkMushroomCollision': redefinition; different basic types
-D:\BP project\mario escape\mario escape\Marioescape.c(2084,6): error C2084: function 'void checkCollision()' already has a body
-      D:\BP project\mario escape\mario escape\Marioescape.c(1565,7):
-      see previous definition of 'checkCollision'
-  
-D:\BP project\mario escape\mario escape\Marioescape.c(2099,14): error C2084: function 'DWORD moveOctopus(LPVOID)' already has a body
-      D:\BP project\mario escape\mario escape\Marioescape.c(1610,15):
-      see previous definition of 'moveOctopus'
-  
-D:\BP project\mario escape\mario escape\Marioescape.c(2119,14): error C2084: function 'DWORD jumpMario(LPVOID)' already has a body
-      D:\BP project\mario escape\mario escape\Marioescape.c(1630,15):
-      see previous definition of 'jumpMario'
-  
-D:\BP project\mario escape\mario escape\Marioescape.c(2400,14): error C2084: function 'DWORD moveMarioHorizontally(LPVOID)' already has a body
-      D:\BP project\mario escape\mario escape\Marioescape.c(1911,14):
-      see previous definition of 'moveMarioHorizontally'
-  
+  mario escape.vcxproj -> D:\BP project\mario escape\x64\Debug\mario escape.exe
