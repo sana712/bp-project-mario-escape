@@ -812,8 +812,74 @@ int extraMarioActive = 0;  // 0 = غیرفعال، 1 = فعال
 int mariopower = 0;  // 0 = ماریوی عادی، 1 = ماریوی قوی (بعد از خوردن قارچ)
 
 int map2[27][62];
+bool isGameOver = false;
+
+int octopusX2[3] = { 10, 12, 25 };  // X برای همه هشت‌پاها
+int octopusY2[3] = { 46, 16, 33 };
+int octopusDir2[3] = { 1, -1, 1 };
+
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void resetData() {
+	// مقداردهی اولیه نقشه
+	memset(map1, 0, sizeof(map1));
+	memset(map2, 0, sizeof(map2));
+
+	// مقداردهی موقعیت‌های اولیه
+	flagmap1 = 1;
+	flowerX1 = 4; flowerY1 = 47;
+	flowerX2 = 8; flowerY2 = 39;
+	flowerState1 = 0; flowerState2 = 0;
+	lastTime = 0;
+
+	// موقعیت و جهت‌های هشت‌پاها (روش صحیح مقداردهی)
+	int octopusX_temp[] = { 12, 12, 12 };
+	int octopusY_temp[] = { 55, 57, 20 };
+	int octopusDir_temp[] = { 1, -1, 1 };
+
+	for (int i = 0; i < 3; i++) {
+		octopusX[i] = octopusX_temp[i];
+		octopusY[i] = octopusY_temp[i];
+		octopusDir[i] = octopusDir_temp[i];
+	}
+
+	marioX = 10; marioY = 10; // موقعیت ماریو
+	isMarioJumping = false;
+	jumpHeight = 4; jumpStep = 0;
+	jumpStep2 = 0;
+
+	// مقداردهی مربوط به سکه‌ها و قارچ
+	coins = 0;
+	blockcoin = 0;
+	mushroomx = -1; mushroomy = -1;
+	mushroomstate = 0;
+	mushroomuse = 0;
+
+	// مقداردهی امتیاز و قدرت ماریو
+	score = 0;
+	scoreMultiplier = 1;
+	lastKillTime = 0;
+	mariopower = 0; // 0 = عادی، 1 = قوی
+
+	// مقداردهی ماریوی دوم
+	marioX2 = -1;
+	marioY2 = -1;
+	extraMarioActive = 0;
+
+	// مقداردهی اولیه نقشه
+	isGameOver = false;
+
+	// مقداردهی مجدد هشت‌پاهای مپ دوم
+	int octopusX2_temp[] = { 10, 12, 25 };
+	int octopusY2_temp[] = { 46, 16, 33 };
+	int octopusDir2_temp[] = { 1, -1, 1 };
+
+	for (int i = 0; i < 3; i++) {
+		octopusX2[i] = octopusX2_temp[i];
+		octopusY2[i] = octopusY2_temp[i];
+		octopusDir2[i] = octopusDir2_temp[i];
+	}
+}
 
 // تبدیل مقدار نقشه به کاراکتر
 void converttochar1(int i, int j) {
@@ -1074,7 +1140,7 @@ void converttochar1(int i, int j) {
 			printf("🍄");
 		}
 		else if (map2[i][j] == 15) {
-			printf("🍄");
+			printf("👺");
 		}
 	}
 
@@ -1457,7 +1523,7 @@ void converttochar1(int i, int j) {
 					}
 					if (j == 42)
 					{
-						map2[i][j] = 0;
+						map2[i][j] = 15;
 					}
 					
 
@@ -1483,7 +1549,35 @@ void converttochar1(int i, int j) {
 		printf(Reset);
 	}
 
-	
+	void checkGameOver() {
+		// برخورد با هشت‌پا از چپ یا راست
+		for (int i = 0; i < 3; i++) {
+			if ((octopusX[i] == marioX - 1 || octopusX[i] == marioX + 1) && octopusY[i] == marioY) {
+				isGameOver = true;
+				return;
+			}
+		}
+
+		// اگه زیر ماریو گل باشه
+		if (map1[marioX][marioY + 1] == 7) {
+			isGameOver = true;
+			return;
+		}
+
+		// اگه دور ماریو دایناسور باشه
+		if (map1[marioX - 1][marioY] == 6 ||
+			map1[marioX + 1][marioY] == 6 ||
+			map1[marioX][marioY - 1] == 6 ||
+			map1[marioX][marioY + 1] == 6) {
+			isGameOver = true;
+			return;
+		}
+
+		if (map1[marioX + 1][marioY] == 15) {
+			isGameOver = true;
+			return;
+		}
+	}
 
 
 	void calculateScore() {
@@ -1993,9 +2087,7 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
     return 0;
 }
 // ////////////////////////////////////////////////////////////////////////////////////////
-int octopusX2[3] = { 10, 12, 25 };  // X برای همه هشت‌پاها
-int octopusY2[3] = { 46, 16, 33 };
-int octopusDir2[3] = { 1, -1, 1 };
+
 // //////////////////////////////////////////////////////////////////////////////////////
 void printMap2() {
 	for (int i = 0; i < 27; i++) {
@@ -2010,6 +2102,35 @@ void printMap2() {
 	printf(Reset);
 }
 
+void checkGameOver2() {
+	// برخورد با هشت‌پا از چپ یا راست
+	for (int i = 0; i < 3; i++) {
+		if ((octopusY2[i] == marioY - 1 || octopusY2[i] == marioY + 1) ) {
+			isGameOver = true;
+			return;
+		}
+	}
+
+	// اگه زیر ماریو گل باشه
+	if (map2[marioX][marioY + 1] == 7) {
+		isGameOver = true;
+		return;
+	}
+
+	// اگه دور ماریو دایناسور باشه
+	if (map2[marioX - 1][marioY] == 6 ||  
+		map2[marioX + 1][marioY] == 6 || 
+		map2[marioX][marioY - 1] == 6 ||  
+		map2[marioX][marioY + 1] == 6) {  
+		isGameOver = true;
+		return;
+	}
+	
+	if (map2[marioX + 1][marioY] == 15) {
+		isGameOver = true;
+		return;
+	}
+}
 
 
 void killEnemy2(int x, int y) {
@@ -2654,14 +2775,59 @@ int main()
 	HANDLE octopusThread2 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus2, NULL, 0, NULL);
 
 	//HANDLE mushroomThread = CreateThread(NULL, 0, moveMushroomThread2, NULL, 0, NULL);
-
 	while (1) {
+		checkGameOver2();
+		if (isGameOver) {
+			system("cls||clear");
+			printf(Yellow);
+			printf("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t");
+			printf("GAME OVER :(");
+			printf(Reset);
+			Sleep(2000);
+			system("cls||clear");
+
+			printf("do you wanna play again?(y/n): ");
+			char input[20];
+			scanf("%s", input);
+			getchar();
+
+			if (strcmp(input, "y") == 0 || strcmp(input, "Y") == 0) {
+				// **متوقف کردن تردهای قبلی**
+				TerminateThread(moveThread2, 0);
+				TerminateThread(jumpThread2, 0);
+				TerminateThread(octopusThread2, 0);
+
+				CloseHandle(moveThread2);
+				CloseHandle(jumpThread2);
+				CloseHandle(octopusThread2);
+
+				// **ریست کردن متغیرهای بازی**
+				resetData();
+				isGameOver = false; // دوباره مقدار دهی برای ادامه بازی
+
+				// **ایجاد مجدد تردها**
+				moveThread2 = CreateThread(NULL, 0, moveMarioHorizontally2, NULL, 0, NULL);
+				jumpThread2 = CreateThread(NULL, 0, jumpMario2, NULL, 0, NULL);
+				octopusThread2 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus2, NULL, 0, NULL);
+
+				// **دوباره ساختن و چاپ نقشه**
+				creatmap2();
+				system("cls");
+				printMap2();
+
+				continue;  // شروع مجدد حلقه بازی
+			}
+			else {
+				break;
+			}
+		}
+
+		// **قفل کردن هنگام آپدیت نقشه**
 		WaitForSingleObject(lock, INFINITE);
-		// پاک کردن صفحه قبل از چاپ نقشه
 		printf("\033[%d;%dH", 0, 0);
-		printMap2();  // چاپ نقشه به‌روزرسانی شده
+		printMap2();
 		ReleaseMutex(lock);
-		Sleep(200);  // تأخیر برای به‌روزرسانی
+		Sleep(200);
 	}
 
 	// بستن تردها و منابع (هرچند در عمل اینجا نمی‌رسیم)
