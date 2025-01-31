@@ -2437,7 +2437,6 @@ DWORD WINAPI jumpMario2(LPVOID lpParam) {
 			isMarioJumping = true;
 			jumpStep = 0;  // شروع پرش
 		}
-
 		if (isMarioJumping) {
 			WaitForSingleObject(lock, INFINITE);
 			if (jumpStep < jumpHeight) {  // حرکت به بالا
