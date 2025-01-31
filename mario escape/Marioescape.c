@@ -793,7 +793,7 @@ bool isMarioJumping = false;  // وضعیت پرش
 int jumpHeight = 4, jumpStep = 0;
 int jumpStep2 = 0;
 HANDLE lock;
-
+HANDLE lock2;
 int coins = 0;
 int blockcoin = 0;
 
@@ -813,6 +813,7 @@ int mariopower = 0;  // 0 = ماریوی عادی، 1 = ماریوی قوی (ب�
 
 int map2[27][62];
 bool isGameOver = false;
+bool isGameOver2 = false;
 
 int octopusX2[3] = { 10, 12, 25 };  // X برای همه هشت‌پاها
 int octopusY2[3] = { 46, 16, 33 };
@@ -1426,7 +1427,7 @@ void converttochar1(int i, int j) {
 					}
 				}
 				if (i == 22) {
-					if (j == 26 || j == 47)
+					if (j == 26 || j == 47|| j==37)
 					{
 						map2[i][j] = 2;
 					}
@@ -1444,7 +1445,7 @@ void converttochar1(int i, int j) {
 					}
 				}
 				if (i == 23) {
-					if (j == 26 || j == 47)
+					if (j == 26 || j == 47||j==35)
 					{
 						map2[i][j] = 2;
 					}
@@ -1535,32 +1536,22 @@ void converttochar1(int i, int j) {
 		
 	}
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	void printMap1() {
-		for (int i = 0; i < 14; i++) {
-			for (int j = 0; j < 64; j++) {
-				converttochar1(i, j);  // چاپ خانه‌های نقشه
-			}
-			printf("\n");
-		}
-		printf(Pink);
-		printf("coins : %d\n", coins);
-		printf("Score: %d (Multiplier: x%d)", score, scoreMultiplier);
-		printf(Reset);
-	}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 	void checkGameOver() {
 		// برخورد با هشت‌پا از چپ یا راست
 		for (int i = 0; i < 3; i++) {
 			if ((octopusX[i] == marioX - 1 || octopusX[i] == marioX + 1) && octopusY[i] == marioY) {
-				isGameOver = true;
+				isGameOver2 = true;
 				return;
 			}
 		}
 
 		// اگه زیر ماریو گل باشه
 		if (map1[marioX][marioY + 1] == 7) {
-			isGameOver = true;
+			isGameOver2 = true;
 			return;
 		}
 
@@ -1569,12 +1560,12 @@ void converttochar1(int i, int j) {
 			map1[marioX + 1][marioY] == 6 ||
 			map1[marioX][marioY - 1] == 6 ||
 			map1[marioX][marioY + 1] == 6) {
-			isGameOver = true;
+			isGameOver2 = true;
 			return;
 		}
 
 		if (map1[marioX + 1][marioY] == 15) {
-			isGameOver = true;
+			isGameOver2 = true;
 			return;
 		}
 	}
@@ -2086,26 +2077,127 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
     }
     return 0;
 }
-// ////////////////////////////////////////////////////////////////////////////////////////
 
-// //////////////////////////////////////////////////////////////////////////////////////
-void printMap2() {
+
+int remainingTime2 = 120;
+
+// تابع تایمر برای نمایش زمان باقی‌مانده
+DWORD WINAPI updateTimer2(LPVOID param) {
+	while (remainingTime2 > 0 && !isGameOver2) {
+		Sleep(1000); // یک ثانیه صبر کن
+		remainingTime2--;
+	}
+	if (remainingTime2 == 0) {
+		isGameOver2 = true; // زمانی که تایم تموم میشه بازی تموم میشه
+	}
+	return 0;
+}
+void printTimer1() {
+
+	printf("Time Left: %02d:%02d  ", remainingTime2 / 60, remainingTime2 % 60);
+}
+void printMap1() {
 	for (int i = 0; i < 27; i++) {
 		for (int j = 0; j < 62; j++) {
-			converttochar2(i, j);  // چاپ خانه‌های نقشه
+			converttochar1(i, j);  // چاپ خانه‌های نقشه
 		}
 		printf("\n");
 	}
 	printf(Blue);
 	printf("coins : %d\n", coins);
-	printf("Score: %d (Multiplier: x%d)", score, scoreMultiplier);
+	printf("Score: %d\n", score);
 	printf(Reset);
+	printTimer1();
 }
+
+void startGameLoop1() {
+	HANDLE lock = CreateMutex(NULL, FALSE, NULL);
+
+	creatmap1();
+	system("cls");
+	printMap1();
+
+	HANDLE flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
+	HANDLE moveThread = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
+	HANDLE jumpThread = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
+	HANDLE octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
+	HANDLE mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
+	HANDLE timerThread2 = CreateThread(NULL, 0, updateTimer2, NULL, 0, NULL);
+
+	while (1) {
+		checkGameOver();
+		if (isGameOver) {
+			TerminateThread(moveThread, 0);
+			TerminateThread(jumpThread, 0);
+			TerminateThread(octopusThread, 0);
+			TerminateThread(timerThread2, 0);
+			TerminateThread(updateFlowersPeriodically, 0);
+
+			system("cls");
+			printf(Yellow);
+			printf("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t");
+			printf("GAME OVER :(");
+			printf(Reset);
+			Sleep(2000);
+			system("cls");
+
+			printf("do you wanna play again?(y/n): ");
+			char input[20];
+			scanf("%s", input);
+			getchar();
+
+			if (strcmp(input, "y") == 0 || strcmp(input, "Y") == 0) {
+				Sleep(500);
+				system("cls");
+
+				resetData();
+				isGameOver2 = false;
+				remainingTime2 = 300; // تایمر ریست شود
+
+				moveThread = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
+				jumpThread = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
+				octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
+				timerThread2 = CreateThread(NULL, 0, updateTimer2, NULL, 0, NULL);
+				flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
+
+				creatmap1();
+				system("cls");
+				printMap1();
+
+				continue;
+			}
+			else {
+				break;
+			}
+		}
+
+		WaitForSingleObject(lock, INFINITE);
+		printf("\033[%d;%dH", 0, 0);
+		printMap1();
+		ReleaseMutex(lock);
+		Sleep(200);
+	}
+	if (mushroomThread != NULL) {
+		WaitForSingleObject(mushroomThread, INFINITE); // صبر می‌کنیم تا Thread تموم بشه
+		CloseHandle(mushroomThread); // آزاد کردن منابع
+		mushroomThread = NULL; // مقدار‌دهی دوباره
+	}
+
+	CloseHandle(moveThread);
+	CloseHandle(jumpThread);
+	CloseHandle(flowerThread);
+	CloseHandle(octopusThread);
+	CloseHandle(lock);
+}
+// ////////////////////////////////////////////////////////////////////////////////////////
+
+// //////////////////////////////////////////////////////////////////////////////////////
+
 
 void checkGameOver2() {
 	// برخورد با هشت‌پا از چپ یا راست
 	for (int i = 0; i < 3; i++) {
-		if ((octopusY2[i] == marioY - 1 || octopusY2[i] == marioY + 1) ) {
+		if ((octopusY2[i] == marioY - 1 || octopusY2[i] == marioY + 1) && (marioX == octopusX2[i])) {
 			isGameOver = true;
 			return;
 		}
@@ -2210,7 +2302,7 @@ void checkCollision2() {
 // حرکت اختاپوس‌ها با زمان‌بندی مستقل
 DWORD WINAPI moveOctopus2(LPVOID lpParam) {
 	while (1) {
-		WaitForSingleObject(lock, INFINITE);
+		WaitForSingleObject(lock2, INFINITE);
 		for (int i = 0; i < 3; i++) {
 			map2[octopusX2[i]][octopusY2[i]] = 0;
 			octopusY2[i] += octopusDir2[i];
@@ -2220,7 +2312,7 @@ DWORD WINAPI moveOctopus2(LPVOID lpParam) {
 			}
 			map2[octopusX2[i]][octopusY2[i]] = 12;  // جایگذاری اختاپوس
 		}
-		ReleaseMutex(lock);
+		ReleaseMutex(lock2);
 		Sleep(600);
 	}
 	return 0;
@@ -2661,6 +2753,113 @@ DWORD WINAPI moveMarioHorizontally2(LPVOID lpParam) {
 	}
 	return 0;
 }
+int remainingTime = 300; // 300 ثانیه = 5 دقیقه
+
+// تابع تایمر برای نمایش زمان باقی‌مانده
+DWORD WINAPI updateTimer(LPVOID param) {
+	while (remainingTime > 0 && !isGameOver) {
+		Sleep(1000); // یک ثانیه صبر کن
+		remainingTime--;
+	}
+	if (remainingTime == 0) {
+		isGameOver = true; // زمانی که تایم تموم میشه بازی تموم میشه
+	}
+	return 0;
+}
+void printTimer() {
+
+	printf("Time Left: %02d:%02d  ", remainingTime / 60, remainingTime % 60);
+}
+void printMap2() {
+	for (int i = 0; i < 27; i++) {
+		for (int j = 0; j < 62; j++) {
+			converttochar2(i, j);  // چاپ خانه‌های نقشه
+		}
+		printf("\n");
+	}
+	printf(Blue);
+	printf("coins : %d\n", coins);
+	printf("Score: %d\n", score);
+	printf(Reset);
+	printTimer();
+}
+
+void startGameLoop() {
+	HANDLE lock = CreateMutex(NULL, FALSE, NULL);
+
+	creatmap2();
+	system("cls");
+	printMap2();
+
+	HANDLE moveThread2 = CreateThread(NULL, 0, moveMarioHorizontally2, NULL, 0, NULL);
+	HANDLE jumpThread2 = CreateThread(NULL, 0, jumpMario2, NULL, 0, NULL);
+	HANDLE octopusThread2 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus2, NULL, 0, NULL);
+
+	HANDLE timerThread = CreateThread(NULL, 0, updateTimer, NULL, 0, NULL);
+
+	while (1) {
+		checkGameOver2();
+		if (isGameOver) {
+			TerminateThread(moveThread2, 0);
+			TerminateThread(jumpThread2, 0);
+			TerminateThread(octopusThread2, 0);
+			TerminateThread(timerThread, 0);
+			
+
+			system("cls");
+			printf(Yellow);
+			printf("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t");
+			printf("GAME OVER :(");
+			printf(Reset);
+			Sleep(2000);
+			system("cls");
+
+			printf("do you wanna play again?(y/n): ");
+			char input[20];
+			scanf("%s", input);
+			getchar();
+
+			if (strcmp(input, "y") == 0 || strcmp(input, "Y") == 0) {
+				Sleep(500);
+				system("cls");
+
+				resetData();
+				isGameOver = false;
+				remainingTime = 300; // تایمر ریست شود
+
+				moveThread2 = CreateThread(NULL, 0, moveMarioHorizontally2, NULL, 0, NULL);
+				jumpThread2 = CreateThread(NULL, 0, jumpMario2, NULL, 0, NULL);
+				octopusThread2 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus2, NULL, 0, NULL);
+				timerThread = CreateThread(NULL, 0, updateTimer, NULL, 0, NULL);
+				
+
+				creatmap2();
+				system("cls");
+				printMap2();
+
+				continue;
+			}
+			else {
+				break;
+			}
+		}
+
+		WaitForSingleObject(lock, INFINITE);
+		printf("\033[%d;%dH", 0, 0); 
+		printMap2();
+		ReleaseMutex(lock);
+		Sleep(200);
+	}
+
+	CloseHandle(moveThread2);
+	CloseHandle(jumpThread2);
+	CloseHandle(octopusThread2);
+	CloseHandle(timerThread);
+
+	CloseHandle(lock);
+}
+
+
 // ///////////////////////////////////////////////////////////////////////////////////////////
 int main()
 {
@@ -2756,92 +2955,8 @@ int main()
 	CloseHandle(flowerThread);
 	CloseHandle(octopusThread);
 	CloseHandle(lock);*/
-
-
-	HANDLE lock = CreateMutex(NULL, FALSE, NULL);  // ایجاد قفل برای هماهنگی
-
-	// ایجاد نقشه و چاپ اولیه آن
-	creatmap2();
-	system("cls");
-	printMap2();
-
-	// تعریف تردها
-
-	HANDLE moveThread2 = CreateThread(NULL, 0, moveMarioHorizontally2, NULL, 0, NULL);
-	HANDLE jumpThread2 = CreateThread(NULL, 0, jumpMario2, NULL, 0, NULL);
-
-	
-	// تردی برای حرکت هشت‌پاها
-	HANDLE octopusThread2 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus2, NULL, 0, NULL);
-
-	//HANDLE mushroomThread = CreateThread(NULL, 0, moveMushroomThread2, NULL, 0, NULL);
-	while (1) {
-		checkGameOver2();
-		if (isGameOver) {
-			system("cls||clear");
-			printf(Yellow);
-			printf("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t");
-			printf("GAME OVER :(");
-			printf(Reset);
-			Sleep(2000);
-			system("cls||clear");
-
-			printf("do you wanna play again?(y/n): ");
-			char input[20];
-			scanf("%s", input);
-			getchar();
-
-			if (strcmp(input, "y") == 0 || strcmp(input, "Y") == 0) {
-				// **متوقف کردن تردهای قبلی**
-				TerminateThread(moveThread2, 0);
-				TerminateThread(jumpThread2, 0);
-				TerminateThread(octopusThread2, 0);
-
-				CloseHandle(moveThread2);
-				CloseHandle(jumpThread2);
-				CloseHandle(octopusThread2);
-
-				// **ریست کردن متغیرهای بازی**
-				resetData();
-				isGameOver = false; // دوباره مقدار دهی برای ادامه بازی
-
-				// **ایجاد مجدد تردها**
-				moveThread2 = CreateThread(NULL, 0, moveMarioHorizontally2, NULL, 0, NULL);
-				jumpThread2 = CreateThread(NULL, 0, jumpMario2, NULL, 0, NULL);
-				octopusThread2 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus2, NULL, 0, NULL);
-
-				// **دوباره ساختن و چاپ نقشه**
-				creatmap2();
-				system("cls");
-				printMap2();
-
-				continue;  // شروع مجدد حلقه بازی
-			}
-			else {
-				break;
-			}
-		}
-
-		// **قفل کردن هنگام آپدیت نقشه**
-		WaitForSingleObject(lock, INFINITE);
-		printf("\033[%d;%dH", 0, 0);
-		printMap2();
-		ReleaseMutex(lock);
-		Sleep(200);
-	}
-
-	// بستن تردها و منابع (هرچند در عمل اینجا نمی‌رسیم)
-	/*if (mushroomThread != NULL) {
-		WaitForSingleObject(mushroomThread, INFINITE); // صبر می‌کنیم تا Thread تموم بشه
-		CloseHandle(mushroomThread); // آزاد کردن منابع
-		mushroomThread = NULL; // مقدار‌دهی دوباره
-	}*/
-
-	CloseHandle(moveThread2);
-	CloseHandle(jumpThread2);
-	
-	CloseHandle(octopusThread2);
-	CloseHandle(lock);
+	startGameLoop1();
+	//startGameLoop();
 	system("pause");
 	return 0;
 }
