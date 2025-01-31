@@ -775,7 +775,7 @@ int gamemenu(users** head, char username[30]) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int map1[15][65];
-int flagmap1 = 1;
+
 int flowerX1 = 4, flowerY1 = 47;  
 int flowerX2 = 8, flowerY2 = 39; 
 int flowerState1 = 0, flowerState2 = 0; 
@@ -818,6 +818,7 @@ bool isGameOver2 = false;
 int octopusX2[3] = { 10, 12, 25 };  // X برای همه هشت‌پاها
 int octopusY2[3] = { 46, 16, 33 };
 int octopusDir2[3] = { 1, -1, 1 };
+int remainingTime1 = 120;
 
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -827,7 +828,7 @@ void resetData() {
 	memset(map2, 0, sizeof(map2));
 
 	// مقداردهی موقعیت‌های اولیه
-	flagmap1 = 1;
+
 	flowerX1 = 4; flowerY1 = 47;
 	flowerX2 = 8; flowerY2 = 39;
 	flowerState1 = 0; flowerState2 = 0;
@@ -880,6 +881,9 @@ void resetData() {
 		octopusY2[i] = octopusY2_temp[i];
 		octopusDir2[i] = octopusDir2_temp[i];
 	}
+	remainingTime1 = 120;
+	isGameOver2 = false;
+
 }
 
 // تبدیل مقدار نقشه به کاراکتر
@@ -1543,14 +1547,14 @@ void converttochar1(int i, int j) {
 	void checkGameOver() {
 		// برخورد با هشت‌پا از چپ یا راست
 		for (int i = 0; i < 3; i++) {
-			if ((octopusX[i] == marioX - 1 || octopusX[i] == marioX + 1) && octopusY[i] == marioY) {
+			if ((octopusY[i] == marioY - 1 || octopusY[i] == marioY + 1) && octopusX[i] == marioX) {
 				isGameOver2 = true;
 				return;
 			}
 		}
 
 		// اگه زیر ماریو گل باشه
-		if (map1[marioX][marioY + 1] == 7) {
+		if (map1[marioX+1][marioY] == 7) {
 			isGameOver2 = true;
 			return;
 		}
@@ -1606,7 +1610,7 @@ void converttochar1(int i, int j) {
 
 	void checkMushroomCollision() {
 		// چک می‌کنیم آیا ماریو به زیر بلوک قارچ رسیده است
-		if (map2[marioX - 1][marioY] == 13) {  // بلوک قارچ با کاراکتر 'H' نمایش داده شده است
+		if (map1[marioX - 1][marioY] == 13) {  // بلوک قارچ با کاراکتر 'H' نمایش داده شده است
 			WaitForSingleObject(lock, INFINITE);
 			mushroomx = marioX - 2;  // قرار دادن قارچ در بالای بلوک
 			mushroomy = marioY;
@@ -1622,16 +1626,16 @@ void converttochar1(int i, int j) {
 
 			if (mushroomstate == 1) {
 				// حرکت قارچ به پایین
-				if (map2[mushroomx + 1][mushroomy] == 0) {
-					map2[mushroomx][mushroomy] = 0;  // پاک کردن موقعیت قبلی
+				if (map1[mushroomx + 1][mushroomy] == 0) {
+					map1[mushroomx][mushroomy] = 0;  // پاک کردن موقعیت قبلی
 					mushroomx++;
-					map2[mushroomx][mushroomy] = 14;  // جایگذاری در موقعیت جدید
+					map1[mushroomx][mushroomy] = 14;  // جایگذاری در موقعیت جدید
 				}
 				// حرکت قارچ به راست
 				else if (mushroomy + 1 < 40 && map1[mushroomx][mushroomy + 1] == 0) {
-					map2[mushroomx][mushroomy] = 0;  // پاک کردن موقعیت قبلی
+					map1[mushroomx][mushroomy] = 0;  // پاک کردن موقعیت قبلی
 					mushroomy++;
-					map2[mushroomx][mushroomy] = 14;  // جایگذاری در موقعیت جدید
+					map1[mushroomx][mushroomy] = 14;  // جایگذاری در موقعیت جدید
 				}
 				// حرکت قارچ به چپ (در صورت نیاز)
 				else if (mushroomy - 1 >= 0 && map1[mushroomx][mushroomy - 1] == 0) {
@@ -1745,7 +1749,7 @@ void converttochar1(int i, int j) {
 							if (blockcoin < 3) {
 								checkCollision();
 							}
-							/*if (mushroomuse != 1) {
+							if (mushroomuse != 1) {
 								checkMushroomCollision();
 
 							}
@@ -1757,7 +1761,7 @@ void converttochar1(int i, int j) {
 										printf("Error creating mushroom thread: %d\n", GetLastError());
 									}
 								}
-							}*/
+							}
 
 							if ((marioX == 9 && marioY == 61) || (extraMarioActive && marioX2 == 9 && marioY2 == 61)) {
 								marioX = 4;
@@ -2078,27 +2082,29 @@ DWORD WINAPI moveMarioHorizontally(LPVOID lpParam) {
     return 0;
 }
 
+// ///////////////////////////////////////////////////////////////////////////////////////////
 
-int remainingTime2 = 120;
+
 
 // تابع تایمر برای نمایش زمان باقی‌مانده
 DWORD WINAPI updateTimer2(LPVOID param) {
-	while (remainingTime2 > 0 && !isGameOver2) {
+	while (remainingTime1 > 0 && !isGameOver2) {
 		Sleep(1000); // یک ثانیه صبر کن
-		remainingTime2--;
+		remainingTime1--;
 	}
-	if (remainingTime2 == 0) {
+	if (remainingTime1 == 0) {
 		isGameOver2 = true; // زمانی که تایم تموم میشه بازی تموم میشه
 	}
 	return 0;
 }
 void printTimer1() {
-
-	printf("Time Left: %02d:%02d  ", remainingTime2 / 60, remainingTime2 % 60);
+	printf(Blue);
+	printf("Time Left: %02d:%02d  ", remainingTime1 / 60, remainingTime1 % 60);
+	printf(Reset);
 }
 void printMap1() {
-	for (int i = 0; i < 27; i++) {
-		for (int j = 0; j < 62; j++) {
+	for (int i = 0; i < 14; i++) {
+		for (int j = 0; j < 64; j++) {
 			converttochar1(i, j);  // چاپ خانه‌های نقشه
 		}
 		printf("\n");
@@ -2111,27 +2117,38 @@ void printMap1() {
 }
 
 void startGameLoop1() {
+
 	HANDLE lock = CreateMutex(NULL, FALSE, NULL);
 
 	creatmap1();
 	system("cls");
 	printMap1();
 
-	HANDLE flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
 	HANDLE moveThread = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
 	HANDLE jumpThread = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
+
+	// تردی برای بروزرسانی گل‌ها
+	HANDLE flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
+
+	// تردی برای حرکت هشت‌پاها
 	HANDLE octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
+
 	HANDLE mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
+
 	HANDLE timerThread2 = CreateThread(NULL, 0, updateTimer2, NULL, 0, NULL);
 
 	while (1) {
 		checkGameOver();
-		if (isGameOver) {
+		if (isGameOver2) {
+
+
 			TerminateThread(moveThread, 0);
 			TerminateThread(jumpThread, 0);
 			TerminateThread(octopusThread, 0);
+			TerminateThread(mushroomThread, 0);
+			TerminateThread(flowerThread, 0);
 			TerminateThread(timerThread2, 0);
-			TerminateThread(updateFlowersPeriodically, 0);
+
 
 			system("cls");
 			printf(Yellow);
@@ -2151,14 +2168,19 @@ void startGameLoop1() {
 				system("cls");
 
 				resetData();
+				
+				system("cls");
+				
+
 				isGameOver2 = false;
-				remainingTime2 = 300; // تایمر ریست شود
+				remainingTime1 = 120; // تایمر ریست شود
 
 				moveThread = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
 				jumpThread = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
 				octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
 				timerThread2 = CreateThread(NULL, 0, updateTimer2, NULL, 0, NULL);
 				flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
+				mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
 
 				creatmap1();
 				system("cls");
@@ -2170,23 +2192,32 @@ void startGameLoop1() {
 				break;
 			}
 		}
-
+		//Sleep(50);
+		//system("cls");
 		WaitForSingleObject(lock, INFINITE);
-		printf("\033[%d;%dH", 0, 0);
+		//system("cls");
+
+		printf("\033[H");  // بردن نشانگر به ابتدای کنسول
+		for (int i = 0; i < 30; i++) // فرض کن نقشه حداکثر 30 خط داره
+			printf("\n");
+
+		printf("\033[H");
 		printMap1();
 		ReleaseMutex(lock);
 		Sleep(200);
 	}
+
 	if (mushroomThread != NULL) {
 		WaitForSingleObject(mushroomThread, INFINITE); // صبر می‌کنیم تا Thread تموم بشه
 		CloseHandle(mushroomThread); // آزاد کردن منابع
 		mushroomThread = NULL; // مقدار‌دهی دوباره
 	}
-
 	CloseHandle(moveThread);
 	CloseHandle(jumpThread);
 	CloseHandle(flowerThread);
 	CloseHandle(octopusThread);
+	CloseHandle(timerThread2);
+
 	CloseHandle(lock);
 }
 // ////////////////////////////////////////////////////////////////////////////////////////
