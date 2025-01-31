@@ -3057,7 +3057,7 @@ int main()
 	GetConsoleMode(hConsole, &dwMode);
 	SetConsoleMode(hConsole, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
-	/*firstwellcome();
+	firstwellcome();
 	users* head = readfile(); // خواندن کاربران از فایل
 	int choice;
 	char currentUser[30]; // ذخیره نام کاربری که وارد شده است
@@ -3085,6 +3085,7 @@ int main()
 			if (gamemenu(&head, currentUser)) { // اگر بازی شروع شد
 				// اینجا می‌توانید کدهای شروع بازی را اضافه کنید
 				printf("Game starting...\n");
+				startGameLoop1();
 				// به عنوان مثال، بازی به طور خلاصه اجرا می‌شود
 				// شما باید کدهای مربوط به بازی را اینجا پیاده‌سازی کنید
 			}
@@ -3092,7 +3093,9 @@ int main()
 		case 3:
 			savedata(head); // ذخیره داده‌ها قبل از خروج
 			system("cls||clear");
-			printf("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\033[1;32m%HOPE YOU ENJOYED:)\033[0m");
+			printf(Yellow);
+			printf("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\tHOPE YOU ENJOYED:)");
+			printf(Reset);
 			printf("\n\n\t\t\t\t\t\t\t\t \033[1;34m%[GOODBYE]\033[0m");
 			Sleep(4000);
 			return 0;
@@ -3112,40 +3115,9 @@ int main()
 	system("cls");
 	printMap1();
 
-	// تعریف تردها
-	HANDLE moveThread = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
-	HANDLE jumpThread = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
-
-	// تردی برای بروزرسانی گل‌ها
-	HANDLE flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
-
-	// تردی برای حرکت هشت‌پاها
-	HANDLE octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
 	
-	HANDLE mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
-
-	while (1) {
-		WaitForSingleObject(lock, INFINITE);
-		printf("\033[%d;%dH", 0, 0);  // بازگشت به موقعیت بالای صفحه
-		printMap1();  // چاپ نقشه به‌روزرسانی شده
-		ReleaseMutex(lock);
-		Sleep(200);  // تأخیر برای به‌روزرسانی
-	}
-
-	// بستن تردها و منابع (هرچند در عمل اینجا نمی‌رسیم)
-	if (mushroomThread != NULL) {
-		WaitForSingleObject(mushroomThread, INFINITE); // صبر می‌کنیم تا Thread تموم بشه
-		CloseHandle(mushroomThread); // آزاد کردن منابع
-		mushroomThread = NULL; // مقدار‌دهی دوباره
-	}
-
-	CloseHandle(moveThread);
-	CloseHandle(jumpThread);
-	CloseHandle(flowerThread);
-	CloseHandle(octopusThread);
-	CloseHandle(lock);*/
 	//startGameLoop1();
-	startGameLoop();
+	//startGameLoop();
 	system("pause");
 	return 0;
 }

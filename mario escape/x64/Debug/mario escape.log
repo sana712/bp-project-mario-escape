@@ -1,4 +1,5 @@
 ﻿  Marioescape.c
 D:\BP project\mario escape\mario escape\Marioescape.c(75,9): warning C4129: ' ': unrecognized character escape sequence
 D:\BP project\mario escape\mario escape\Marioescape.c(75,9): warning C4476: 'printf' : unknown type field character 'W' in format specifier
+D:\BP project\mario escape\mario escape\Marioescape.c(3099,11): warning C4476: 'printf' : unknown type field character '[' in format specifier
   mario escape.vcxproj -> D:\BP project\mario escape\x64\Debug\mario escape.exe
