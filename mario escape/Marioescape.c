@@ -2193,7 +2193,7 @@ int checkWinCondition() {
 
 
 void startGameLoop();
-void startGameLoop1() {
+int startGameLoop1() {
 	histo.matchID = 1;
 	HANDLE lock = CreateMutex(NULL, FALSE, NULL);
 
@@ -2291,16 +2291,17 @@ void startGameLoop1() {
 			scanf(" %c", &choice);
 
 			if (choice == 'y' || choice == 'Y') {
-				CloseHandle(moveThread);
-				CloseHandle(jumpThread);
-				CloseHandle(flowerThread);
-				CloseHandle(octopusThread);
-				CloseHandle(timerThread2);
+				TerminateThread(moveThread, 0);
+				TerminateThread(jumpThread, 0);
+				TerminateThread(octopusThread, 0);
+				TerminateThread(mushroomThread, 0);
+				TerminateThread(flowerThread, 0);
+				TerminateThread(timerThread2, 0);
 			
 
 				resetData();
 				system("cls");
-				startGameLoop(); // اجرای مرحله دوم
+				return 1; // اجرای مرحله دوم
 				
 			}
 
@@ -2356,6 +2357,7 @@ void startGameLoop1() {
 	CloseHandle(timerThread2);
 
 	CloseHandle(lock);
+	return 0;
 }
 // ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -3212,10 +3214,15 @@ int main()
 			savedata(head); // فراخوانی لاگین
 			// بعد از موفقیت در لاگین، منوی بازی باید نشان داده شود
 			strcpy(currentUser, head->data.username); // ذخیره نام کاربری وارد شده
-			if (gamemenu(&head, currentUser)) { // اگر بازی شروع شد
+			while (gamemenu(&head, currentUser)) { // اگر بازی شروع شد
 				printf("Game starting...\n");
 				Sleep(3000);
-				startGameLoop1();
+				if(startGameLoop1())
+				{
+					savehistory(histo);
+					resetData();
+					startGameLoop();
+				}
 				savehistory(histo);
 				savedata(head);
 			}
