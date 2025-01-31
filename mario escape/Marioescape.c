@@ -150,6 +150,29 @@ users* readfile() {
 	}
 	return head;
 }
+char* findusernamewithid(users* head, int x) {
+	users* temp = head;
+	while (temp != NULL) {
+		if (temp->data.id == x) {
+			return temp->data.username;
+		}
+		temp = temp->next;
+	}
+	return NULL; // در صورتی که کاربر پیدا نشود
+}
+
+users* loadUserData(int userId) {
+	users* head = readfile(); // فرض بر این است که تابع readfile لیست کاربران را برمی‌گرداند
+	char* username = findusernamewithid(head, userId);
+	if (username != NULL) {
+		printf("Username: %s\n", username);
+	}
+	else {
+		printf("User not found.\n");
+	}
+	return head;
+}
+
 void savedata(users* head) {
 
 	FILE* ppp;
@@ -819,6 +842,7 @@ int octopusX2[3] = { 10, 12, 25 };  // X برای همه هشت‌پاها
 int octopusY2[3] = { 46, 16, 33 };
 int octopusDir2[3] = { 1, -1, 1 };
 int remainingTime1 = 120;
+int remainingTime = 300;
 
 int shield = 0;
 
@@ -831,6 +855,8 @@ void resetData() {
 	memset(map2, 0, sizeof(map2));
 
 	// مقداردهی موقعیت‌های اولیه
+
+	int shield = 0;
 
 	flowerX1 = 4; flowerY1 = 47;
 	flowerX2 = 8; flowerY2 = 39;
@@ -848,7 +874,8 @@ void resetData() {
 		octopusDir[i] = octopusDir_temp[i];
 	}
 
-	marioX = 10; marioY = 10; // موقعیت ماریو
+	marioX = 10; 
+	marioY = 10; // موقعیت ماریو
 	isMarioJumping = false;
 	jumpHeight = 4; jumpStep = 0;
 	jumpStep2 = 0;
@@ -1333,9 +1360,7 @@ void converttochar1(int i, int j) {
 					if (j == 27) {
 						map2[i][j] = 8;
 					}
-					if (j == 13) {
-						map2[i][j] = 11;
-					}
+					
 				
 				}
 				if (i == 13) {
@@ -1596,19 +1621,14 @@ void converttochar1(int i, int j) {
 	}
 
 
-	static int lastScoreTime = 0;
-	static int multiplier = 1;
+	
 	void calculateScore() {
-		int currentTime = GetTickCount();
+		
+		static int lastKillTime = 0;   // زمان آخرین نابودی دشمن
+		static int multiplier = 1;    // ضریب امتیاز
+		int currentTime = GetTickCount();  // زمان فعلی
 
-		// اضافه کردن امتیاز هر 10 ثانیه
-		if (currentTime - lastScoreTime >= 10000) {
-			score += 100;
-			lastScoreTime = currentTime;
-		}
-
-		// بررسی کشتن دشمن و اعمال ضریب
-		if (currentTime - lastKillTime <= 5000) {
+		if (currentTime - lastKillTime <= 5000) {  // اگر فاصله کمتر از 5 ثانیه باشد
 			multiplier = (multiplier < 8) ? multiplier * 2 : 8;
 		}
 		else {
@@ -1616,7 +1636,9 @@ void converttochar1(int i, int j) {
 		}
 
 		score += 100 * multiplier;
+		
 		lastKillTime = currentTime;
+
 	}
 
 
@@ -2154,7 +2176,7 @@ int checkWinCondition() {
 		Sleep(2000);
 		system("cls");
 
-		printf("Do you want to play again? (y/n): ");
+		printf("Do you wanna go to the next level? (y/n): ");
 		char input[20];
 		scanf("%s", input);
 		getchar();
@@ -2194,47 +2216,7 @@ void startGameLoop1() {
 
 	while (1) {
 		checkGameOver();
-		int winStatus = checkWinCondition();
-		if (winStatus == 1) {
-			histo.wins++;
-			currentuser.wins++;
-			currentuser.points += score;
-			currentuser.coins += coins;
-			printf(Cyan);
-			printf("Stage Cleared!\nCoins Earned: %d | Points Earned: %d\n", coins, score);
-			printf("Do you want to continue to the next level? (y/n): ");
-			printf(Reset);
-			char choice;
-			scanf(" %c", &choice);
-
-			if (choice == 'y' || choice == 'Y') {
-				resetData();
-				startGameLoop();  // اجرای مرحله دوم
-			}
-
-
-			// اگر بازیکن برنده شد و می‌خواهد ادامه دهد
-			resetData();
-			isGameOver2 = false;
-			remainingTime1 = 120;  // تایمر ریست شود
-
-			// اجرای دوباره نخ‌ها (Threads)
-			moveThread = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
-			jumpThread = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
-			octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
-			timerThread2 = CreateThread(NULL, 0, updateTimer2, NULL, 0, NULL);
-			flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
-			mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
-
-			// چاپ نقشه
-			system("cls");
-			creatmap1();
-			printMap1();
-		}
-		else if (winStatus == 0) {
-			// اگر بازیکن برنده شد اما نمی‌خواهد ادامه دهد
-			break;
-		}
+		
 		if (isGameOver2) {
 			histo.lose++;
 
@@ -2291,6 +2273,61 @@ void startGameLoop1() {
 			}
 
 
+		}
+
+		int winStatus = checkWinCondition();
+		if (winStatus == 1) {
+			histo.wins++;
+			currentuser.wins++;
+			currentuser.points += score;
+			currentuser.coins += coins;
+
+			score += 100 * (remainingTime1 / 10);
+			printf(Cyan);
+			printf("Coins Earned: %d | Points Earned: %d\n", coins, score);
+			printf("Do you want to continue to the next level? (y/n): ");
+			printf(Reset);
+			char choice;
+			scanf(" %c", &choice);
+
+			if (choice == 'y' || choice == 'Y') {
+				CloseHandle(moveThread);
+				CloseHandle(jumpThread);
+				CloseHandle(flowerThread);
+				CloseHandle(octopusThread);
+				CloseHandle(timerThread2);
+			
+
+				resetData();
+				system("cls");
+				startGameLoop(); // اجرای مرحله دوم
+				
+			}
+
+			else {
+				break;
+			}
+			// اگر بازیکن برنده شد و می‌خواهد ادامه دهد
+			resetData();
+			isGameOver2 = false;
+			remainingTime1 = 120;  // تایمر ریست شود
+
+			// اجرای دوباره نخ‌ها (Threads)
+			moveThread = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
+			jumpThread = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
+			octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
+			timerThread2 = CreateThread(NULL, 0, updateTimer2, NULL, 0, NULL);
+			flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
+			mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
+
+			// چاپ نقشه
+			system("cls");
+			creatmap1();
+			printMap1();
+		}
+		else if (winStatus == 0) {
+			// اگر بازیکن برنده شد اما نمی‌خواهد ادامه دهد
+			break;
 		}
 		//Sleep(50);
 		//system("cls");
@@ -2375,6 +2412,24 @@ void checkGameOver2() {
 	
 }
 
+void calculateScore2() {
+
+	static int lastKillTime = 0;   // زمان آخرین نابودی دشمن
+	static int multiplier = 1;    // ضریب امتیاز
+	int currentTime = GetTickCount();  // زمان فعلی
+
+	if (currentTime - lastKillTime <= 5000) {  // اگر فاصله کمتر از 5 ثانیه باشد
+		multiplier = (multiplier < 8) ? multiplier * 2 : 8;
+	}
+	else {
+		multiplier = 1;
+	}
+
+	score += 100 * multiplier;
+	
+	lastKillTime = currentTime;
+
+}
 
 
 
@@ -2388,7 +2443,7 @@ void killEnemy2(int x, int y) {
 		}
 	}
 	map2[x][y] = 0;  // حذف دشمن از نقشه
-	calculateScore();  // به‌روزرسانی امتیاز
+	calculateScore2();  // به‌روزرسانی امتیاز
 }
 
 
@@ -2930,7 +2985,7 @@ DWORD WINAPI moveMarioHorizontally2(LPVOID lpParam) {
 	}
 	return 0;
 }
-int remainingTime = 300; // 300 ثانیه = 5 دقیقه
+
 
 // تابع تایمر برای نمایش زمان باقی‌مانده
 DWORD WINAPI updateTimer(LPVOID param) {
@@ -2972,7 +3027,7 @@ int checkWinCondition2() {
 		Sleep(2000);
 		system("cls");
 
-		printf("Do you want to play again? (y/n): ");
+		printf("Do you want to play again? (y/n):  ");
 		char input[20];
 		scanf("%s", input);
 		getchar();
@@ -2989,7 +3044,8 @@ int checkWinCondition2() {
 
 void startGameLoop() {
 	HANDLE lock = CreateMutex(NULL, FALSE, NULL);
-
+	resetData();
+	histo.matchID = 2;
 	creatmap2();
 	system("cls");
 	printMap2();
@@ -3006,6 +3062,29 @@ void startGameLoop() {
 		int winStatus = checkWinCondition2();
 		if (winStatus == 1) {
 			// اگر بازیکن برنده شد و می‌خواهد ادامه دهد
+
+			histo.wins++;
+			currentuser.wins++;
+			currentuser.points += score;
+			currentuser.coins += coins;
+
+			score += 100 * (remainingTime1 / 10);
+			printf(Cyan);
+			printf("Coins Earned: %d | Points Earned: %d\n", coins, score);
+			printf("Do you want to continue to the next level? (y/n): ");
+			printf(Reset);
+			char choice;
+			scanf(" %c", &choice);
+
+			if (choice == 'y' || choice == 'Y') {
+				resetData();
+				system("cls");
+				startGameLoop();  // اجرای مرحله دوم
+			}
+
+			else {
+				break;
+			}
 			resetData();
 			isGameOver2 = false;
 			remainingTime1 = 120;  // تایمر ریست شود
@@ -3165,7 +3244,7 @@ int main()
 	creatmap1();
 	system("cls");
 	printMap1();
-
+	
 	
 	//startGameLoop1();
 	//startGameLoop();
