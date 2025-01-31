@@ -820,6 +820,7 @@ int octopusY2[3] = { 46, 16, 33 };
 int octopusDir2[3] = { 1, -1, 1 };
 int remainingTime1 = 120;
 
+int shield = 0;
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void resetData() {
@@ -1320,7 +1321,7 @@ void converttochar1(int i, int j) {
 					if (j == 16) {
 						map2[i][j] = 12;
 					}
-					if (j == 17 || j == 51 )
+					if (j == 17 || j == 51|| j==14 )
 					{
 						map2[i][j] = 5;
 					}
@@ -1330,7 +1331,9 @@ void converttochar1(int i, int j) {
 					if (j == 27) {
 						map2[i][j] = 8;
 					}
-
+					if (j == 13) {
+						map2[i][j] = 11;
+					}
 				
 				}
 				if (i == 13) {
@@ -2116,6 +2119,33 @@ void printMap1() {
 	printTimer1();
 }
 
+int checkWinCondition() {
+	if (map1[marioX][marioY + 1] == 10 || map1[marioX][marioY - 1] == 10) {
+		system("cls");
+		printf(Yellow);
+		printf("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t");
+		printf("YOU WON! 🎉");
+		printf(Reset);
+		Sleep(2000);
+		system("cls");
+
+		printf("Do you want to play again? (y/n): ");
+		char input[20];
+		scanf("%s", input);
+		getchar();
+
+		if (strcmp(input, "y") == 0 || strcmp(input, "Y") == 0) {
+			return 1;  // ادامه دادن بازی
+		}
+		else {
+			return 0;  // خروج از بازی
+		}
+	}
+	return -1; // هیچ بردی اتفاق نیفتاده
+}
+
+
+
 void startGameLoop1() {
 
 	HANDLE lock = CreateMutex(NULL, FALSE, NULL);
@@ -2139,6 +2169,30 @@ void startGameLoop1() {
 
 	while (1) {
 		checkGameOver();
+		int winStatus = checkWinCondition();
+		if (winStatus == 1) {
+			// اگر بازیکن برنده شد و می‌خواهد ادامه دهد
+			resetData();
+			isGameOver2 = false;
+			remainingTime1 = 120;  // تایمر ریست شود
+
+			// اجرای دوباره نخ‌ها (Threads)
+			moveThread = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
+			jumpThread = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
+			octopusThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
+			timerThread2 = CreateThread(NULL, 0, updateTimer2, NULL, 0, NULL);
+			flowerThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)updateFlowersPeriodically, NULL, 0, NULL);
+			mushroomThread = CreateThread(NULL, 0, moveMushroomThread, NULL, 0, NULL);
+
+			// چاپ نقشه
+			system("cls");
+			creatmap1();
+			printMap1();
+		}
+		else if (winStatus == 0) {
+			// اگر بازیکن برنده شد اما نمی‌خواهد ادامه دهد
+			break;
+		}
 		if (isGameOver2) {
 
 
@@ -2167,6 +2221,8 @@ void startGameLoop1() {
 				Sleep(500);
 				system("cls");
 
+
+				
 				resetData();
 				
 				system("cls");
@@ -2191,6 +2247,8 @@ void startGameLoop1() {
 			else {
 				break;
 			}
+
+
 		}
 		//Sleep(50);
 		//system("cls");
@@ -2223,37 +2281,60 @@ void startGameLoop1() {
 // ////////////////////////////////////////////////////////////////////////////////////////
 
 // //////////////////////////////////////////////////////////////////////////////////////
-
+int shieldCooldown = 5;  // متغیر برای تایمر صبر
+int shieldActive = 0;    // متغیر برای فعال بودن شیلد
 
 void checkGameOver2() {
+	int dangerDetected = 0; // بررسی کنیم که برخوردی رخ داده یا نه
+
 	// برخورد با هشت‌پا از چپ یا راست
 	for (int i = 0; i < 3; i++) {
 		if ((octopusY2[i] == marioY - 1 || octopusY2[i] == marioY + 1) && (marioX == octopusX2[i])) {
-			isGameOver = true;
-			return;
+			dangerDetected = 1;
 		}
 	}
 
 	// اگه زیر ماریو گل باشه
 	if (map2[marioX][marioY + 1] == 7) {
-		isGameOver = true;
-		return;
+		dangerDetected = 1;
 	}
 
 	// اگه دور ماریو دایناسور باشه
-	if (map2[marioX - 1][marioY] == 6 ||  
-		map2[marioX + 1][marioY] == 6 || 
-		map2[marioX][marioY - 1] == 6 ||  
-		map2[marioX][marioY + 1] == 6) {  
-		isGameOver = true;
-		return;
+	if (map2[marioX - 1][marioY] == 6 ||
+		map2[marioX + 1][marioY] == 6 ||
+		map2[marioX][marioY - 1] == 6 ||
+		map2[marioX][marioY + 1] == 6) {
+		dangerDetected = 1;
 	}
-	
+
+	// اگه روی ماریو بلاک خطرناک باشه
 	if (map2[marioX + 1][marioY] == 15) {
-		isGameOver = true;
-		return;
+		dangerDetected = 1;
 	}
+
+	// اگر تهدیدی وجود داشت
+	if (dangerDetected) {
+		if (shield && !shieldCooldown) {
+			shield = 0; // شیلد از بین میره
+			shieldCooldown = 3; // تایمر صبر برای 3 ثانیه
+			shieldActive = 1;  // نشان دادن اینکه شیلد هنوز نیاز به زمان برای از بین رفتن داره
+		}
+		else {
+			if (shieldCooldown == 0) {
+				isGameOver = true; // اگر شیلد نداشتیم، ماریو می‌بازه
+			}
+		}
+	}
+
+	// زمان سپری شده برای صبر کردن بعد از برخورد شیلد
+	if (shieldCooldown > 0) {
+		shieldCooldown--;  // کاهش تایمر
+		
+		}
+	
 }
+
+
 
 
 void killEnemy2(int x, int y) {
@@ -2450,6 +2531,10 @@ DWORD WINAPI jumpMario2(LPVOID lpParam) {
 							coins++;                      // افزایش امتیاز
 							map2[marioX][marioY + 1] = 0;     // حذف سکه از نقشه
 						}
+						if (map2[marioX][marioY + 1] == 11) {
+							shield = 1;
+							map2[marioX][marioY + 1] = 0;
+						}
 
 					}
 					if (GetAsyncKeyState('D') & 0x8000 && marioY < 61 && map2[marioX][marioY + 1] == 0) {
@@ -2477,12 +2562,15 @@ DWORD WINAPI jumpMario2(LPVOID lpParam) {
 							marioY = 45;
 
 						}
-
+						if (map2[marioX][marioY + 1] == 11) {
+							shield = 1;
+							map2[marioX][marioY + 1] = 0;
+						}
 						if (map2[marioX][marioY + 1] == 5) {  
 							coins++;                      
 							map2[marioX][marioY + 1] = 0;    
 						}
-
+						
 					}
 
 					map2[marioX][marioY] = 1;
@@ -2552,9 +2640,13 @@ DWORD WINAPI jumpMario2(LPVOID lpParam) {
 
 					}
 
-					if (map2[marioX][marioY + 1] == 5) { 
+					if (map2[marioX+1][marioY] == 5) { 
 						coins++;                      
-						map2[marioX][marioY + 1] = 0;     
+						map2[marioX+1][marioY ] = 0;     
+					}
+					if (map2[marioX+1][marioY ] == 11) {
+						shield = 1;
+						map2[marioX+1][marioY ] = 0;
 					}
 
 					if (GetAsyncKeyState('A') & 0x8000 && marioY > 0 && map2[marioX][marioY - 1] == 0) {
@@ -2583,9 +2675,14 @@ DWORD WINAPI jumpMario2(LPVOID lpParam) {
 
 						}
 
-						if (map2[marioX][marioY + 1] == 5) {  
+						if (map2[marioX][marioY - 1] == 5) {  
 							coins++;                      
-							map2[marioX][marioY + 1] = 0;     
+							map2[marioX][marioY -1] = 0;     
+						}
+
+						if (map2[marioX][marioY - 1] == 11) {
+							shield = 1;
+							map2[marioX][marioY - 1] = 0;
 						}
 					}
 					if (GetAsyncKeyState('D') & 0x8000 && marioY < 64 && map2[marioX][marioY + 1] == 0) {
@@ -2615,6 +2712,10 @@ DWORD WINAPI jumpMario2(LPVOID lpParam) {
 
 						if (map2[marioX][marioY + 1] == 5) {
 							coins++;
+							map2[marioX][marioY + 1] = 0;
+						}
+						if (map2[marioX][marioY + 1] == 11) {
+							shield = 1;
 							map2[marioX][marioY + 1] = 0;
 						}
 
@@ -2663,9 +2764,9 @@ DWORD WINAPI jumpMario2(LPVOID lpParam) {
 					marioY = 45;
 
 				}
-				if (map2[marioX][marioY + 1] == 5) {
+				if (map2[marioX+1][marioY] == 5) {
 					coins++;
-					map2[marioX][marioY + 1] = 0;
+					map2[marioX+1][marioY ] = 0;
 				}
 
 
@@ -2713,10 +2814,15 @@ DWORD WINAPI moveMarioHorizontally2(LPVOID lpParam) {
 					marioY = 45;
 
 				}
-				if (map2[marioX][marioY + 1] == 5) {
+				if (map2[marioX][marioY - 1] == 5) {
 					coins++;
-					map2[marioX][marioY + 1] = 0;
+					map2[marioX][marioY - 1] = 0;
 				}
+				if (map2[marioX][marioY - 1] == 11) {
+					shield = 1;
+					map2[marioX][marioY - 1] = 0;
+				}
+
 				map2[marioX][marioY] = 1;
 				if (extraMarioActive) {
 					map2[marioX2][marioY2] = 1;  // ماریوی دوم
@@ -2815,6 +2921,32 @@ void printMap2() {
 	printTimer();
 }
 
+
+int checkWinCondition2() {
+	if (map2[marioX][marioY + 1] == 10 || map2[marioX][marioY - 1] == 10) {
+		system("cls");
+		printf(Yellow);
+		printf("\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t");
+		printf("YOU WON! 🎉");
+		printf(Reset);
+		Sleep(2000);
+		system("cls");
+
+		printf("Do you want to play again? (y/n): ");
+		char input[20];
+		scanf("%s", input);
+		getchar();
+
+		if (strcmp(input, "y") == 0 || strcmp(input, "Y") == 0) {
+			return 1;  // ادامه دادن بازی
+		}
+		else {
+			return 0;  // خروج از بازی
+		}
+	}
+	return -1; // هیچ بردی اتفاق نیفتاده
+}
+
 void startGameLoop() {
 	HANDLE lock = CreateMutex(NULL, FALSE, NULL);
 
@@ -2830,6 +2962,30 @@ void startGameLoop() {
 
 	while (1) {
 		checkGameOver2();
+
+		int winStatus = checkWinCondition2();
+		if (winStatus == 1) {
+			// اگر بازیکن برنده شد و می‌خواهد ادامه دهد
+			resetData();
+			isGameOver2 = false;
+			remainingTime1 = 120;  // تایمر ریست شود
+
+			// اجرای دوباره نخ‌ها (Threads)
+			moveThread2 = CreateThread(NULL, 0, moveMarioHorizontally, NULL, 0, NULL);
+			jumpThread2 = CreateThread(NULL, 0, jumpMario, NULL, 0, NULL);
+			octopusThread2 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)moveOctopus, NULL, 0, NULL);
+			timerThread = CreateThread(NULL, 0, updateTimer2, NULL, 0, NULL);
+			
+
+			// چاپ نقشه
+			system("cls");
+			creatmap1();
+			printMap1();
+		}
+		else if (winStatus == 0) {
+			// اگر بازیکن برنده شد اما نمی‌خواهد ادامه دهد
+			break;
+		}
 		if (isGameOver) {
 			TerminateThread(moveThread2, 0);
 			TerminateThread(jumpThread2, 0);
@@ -2876,7 +3032,11 @@ void startGameLoop() {
 		}
 
 		WaitForSingleObject(lock, INFINITE);
-		printf("\033[%d;%dH", 0, 0); 
+		printf("\033[H");  // بردن نشانگر به ابتدای کنسول
+		for (int i = 0; i < 30; i++) // فرض کن نقشه حداکثر 30 خط داره
+			printf("\n");
+
+		printf("\033[H");
 		printMap2();
 		ReleaseMutex(lock);
 		Sleep(200);
@@ -2986,8 +3146,8 @@ int main()
 	CloseHandle(flowerThread);
 	CloseHandle(octopusThread);
 	CloseHandle(lock);*/
-	startGameLoop1();
-	//startGameLoop();
+	//startGameLoop1();
+	startGameLoop();
 	system("pause");
 	return 0;
 }
