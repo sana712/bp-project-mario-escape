@@ -53,14 +53,14 @@ typedef struct users {
 
 typedef struct history {
 	int id;
-	int matchID;     
-	int wins;        
-	int lose;        
+	int matchID ;     
+	int wins ;        
+	int lose ;        
 	int coins;        
 	int points;       
 } history;
 
-
+profile currentuser;
 
 void gotoxy(int x, int y) {
 	COORD coord;
@@ -821,6 +821,8 @@ int octopusDir2[3] = { 1, -1, 1 };
 int remainingTime1 = 120;
 
 int shield = 0;
+
+history histo;
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void resetData() {
@@ -1544,7 +1546,23 @@ void converttochar1(int i, int j) {
 	}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	void userpointsave(users** head, profile user) {
+		users* temp = *head;
 
+		while (temp != NULL) {  // بررسی تا رسیدن به انتهای لیست
+			if (strcmp(temp->data.username, user.username) == 0) {
+				temp->data = user;
+				savedata(*head);
+				return;
+			}
+			temp = temp->next;
+		}
+
+		// اگر یوزر پیدا نشد، می‌توان پیغام داد یا کار خاصی انجام داد
+		printf("User not found in the list!\n");
+	}
+
+// /////////////////////////////////////////////////////////////////////////////////////////////
 
 
 	void checkGameOver() {
@@ -1578,22 +1596,29 @@ void converttochar1(int i, int j) {
 	}
 
 
+	static int lastScoreTime = 0;
+	static int multiplier = 1;
 	void calculateScore() {
-		static int lastKillTime = 0;   // زمان آخرین نابودی دشمن
-		static int multiplier = 1;    // ضریب امتیاز
-		int currentTime = GetTickCount();  // زمان فعلی
+		int currentTime = GetTickCount();
 
-		if (currentTime - lastKillTime <= 5000) {  // اگر فاصله کمتر از 5 ثانیه باشد
-			multiplier = (multiplier < 8) ? multiplier * 2 : 8;  
+		// اضافه کردن امتیاز هر 10 ثانیه
+		if (currentTime - lastScoreTime >= 10000) {
+			score += 100;
+			lastScoreTime = currentTime;
+		}
+
+		// بررسی کشتن دشمن و اعمال ضریب
+		if (currentTime - lastKillTime <= 5000) {
+			multiplier = (multiplier < 8) ? multiplier * 2 : 8;
 		}
 		else {
-			multiplier = 1;  
+			multiplier = 1;
 		}
 
-		score += 100 * multiplier;  
-		lastKillTime = currentTime;  
-
+		score += 100 * multiplier;
+		lastKillTime = currentTime;
 	}
+
 
 
 	void killEnemy(int x, int y) {
@@ -2145,9 +2170,9 @@ int checkWinCondition() {
 }
 
 
-
+void startGameLoop();
 void startGameLoop1() {
-
+	histo.matchID = 1;
 	HANDLE lock = CreateMutex(NULL, FALSE, NULL);
 
 	creatmap1();
@@ -2171,6 +2196,23 @@ void startGameLoop1() {
 		checkGameOver();
 		int winStatus = checkWinCondition();
 		if (winStatus == 1) {
+			histo.wins++;
+			currentuser.wins++;
+			currentuser.points += score;
+			currentuser.coins += coins;
+			printf(Cyan);
+			printf("Stage Cleared!\nCoins Earned: %d | Points Earned: %d\n", coins, score);
+			printf("Do you want to continue to the next level? (y/n): ");
+			printf(Reset);
+			char choice;
+			scanf(" %c", &choice);
+
+			if (choice == 'y' || choice == 'Y') {
+				resetData();
+				startGameLoop();  // اجرای مرحله دوم
+			}
+
+
 			// اگر بازیکن برنده شد و می‌خواهد ادامه دهد
 			resetData();
 			isGameOver2 = false;
@@ -2194,7 +2236,7 @@ void startGameLoop1() {
 			break;
 		}
 		if (isGameOver2) {
-
+			histo.lose++;
 
 			TerminateThread(moveThread, 0);
 			TerminateThread(jumpThread, 0);
@@ -3047,7 +3089,12 @@ void startGameLoop() {
 
 	CloseHandle(lock);
 }
-
+void resethisto() {
+	histo.coins = 0;
+	histo.id = currentuser.id;
+	histo.wins = 0;
+	histo.points = 0;
+}
 
 // ///////////////////////////////////////////////////////////////////////////////////////////
 int main()
@@ -3061,6 +3108,8 @@ int main()
 	users* head = readfile(); // خواندن کاربران از فایل
 	int choice;
 	char currentUser[30]; // ذخیره نام کاربری که وارد شده است
+	resethisto();
+
 
 	while (1) {
 		system("cls||clear");
@@ -3074,20 +3123,22 @@ int main()
 
 		switch (choice) {
 		case 1:
+			resethisto();
 			signup(&head); // فراخوانی ساین آپ
 			savedata(head); // ذخیره داده‌ها
 			break;
 		case 2:
+			resethisto();
 			signin(&head);
 			savedata(head); // فراخوانی لاگین
 			// بعد از موفقیت در لاگین، منوی بازی باید نشان داده شود
 			strcpy(currentUser, head->data.username); // ذخیره نام کاربری وارد شده
 			if (gamemenu(&head, currentUser)) { // اگر بازی شروع شد
-				// اینجا می‌توانید کدهای شروع بازی را اضافه کنید
 				printf("Game starting...\n");
+				Sleep(3000);
 				startGameLoop1();
-				// به عنوان مثال، بازی به طور خلاصه اجرا می‌شود
-				// شما باید کدهای مربوط به بازی را اینجا پیاده‌سازی کنید
+				savehistory(histo);
+				savedata(head);
 			}
 			break;
 		case 3:
